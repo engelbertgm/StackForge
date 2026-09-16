@@ -57,7 +57,6 @@ export function blockedBy(candidate: Tech, selected: Tech[]): string | null {
 }
 
 export function analyze(selected: Tech[], stackRules: StackRule[]): Analysis {
-  const byId = new Map(selected.map((t) => [t.id, t]))
   const caps = new Set<string>()
   for (const t of selected) t.provides?.forEach((c) => caps.add(c))
 
@@ -75,8 +74,10 @@ export function analyze(selected: Tech[], stackRules: StackRule[]): Analysis {
   }
 
   for (const t of selected) {
-    // explicit arrows, only when the other end is on the canvas
-    for (const l of t.links ?? []) if (byId.has(l.to)) push(t.id, l.to, l.rel, l.card)
+    // explicit arrows, only when the other end is on the canvas. Like a need, a link may name a
+    // capability: GitHub Actions runs whichever linter you picked, not one fixed product
+    for (const l of t.links ?? [])
+      for (const o of selected) if (o.id !== t.id && supplies(o, l.to)) push(t.id, o.id, l.rel, l.card)
 
     // A need is a real dependency: draw it to every provider, because that is the
     // relationship the user is trying to see. Many needers, one provider -> n-1.

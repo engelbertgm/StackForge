@@ -43,7 +43,7 @@ export interface Tech {
   conflicts?: string[]
   /** only one selected tech may claim each key here (e.g. one bundler, one BaaS) */
   exclusive?: string[]
-  /** explicit typed arrows to other techs */
+  /** explicit typed arrows; `to` is a tech id or a capability (drawn to every tech supplying it) */
   links?: Link[]
   /** ecosystem tags for filtering */
   tags?: string[]

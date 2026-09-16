@@ -1038,6 +1038,60 @@
     ]
   },
   {
+    "id": "reacthookform",
+    "name": "React Hook Form",
+    "group": "frontend",
+    "section": "State & Data",
+    "icon": "reacthookform",
+    "color": "#ec5990",
+    "langs": [
+      "ts"
+    ],
+    "desc": "Form state and validation with uncontrolled inputs and few re-renders. Use for any React form past a login box.",
+    "provides": [
+      "forms"
+    ],
+    "links": [
+      {
+        "to": "react",
+        "rel": "extends"
+      },
+      {
+        "to": "zod",
+        "rel": "consumes"
+      }
+    ],
+    "tags": [
+      "web"
+    ],
+    "url": "https://react-hook-form.com"
+  },
+  {
+    "id": "zod",
+    "name": "Zod",
+    "group": "frontend",
+    "section": "State & Data",
+    "icon": "zod",
+    "color": "#3e67b1",
+    "langs": [
+      "ts"
+    ],
+    "desc": "Schema validation that infers TypeScript types. Use at every trust boundary: forms, API payloads, env vars.",
+    "provides": [
+      "validation"
+    ],
+    "links": [
+      {
+        "to": "typescript",
+        "rel": "types"
+      }
+    ],
+    "tags": [
+      "web"
+    ],
+    "url": "https://zod.dev"
+  },
+  {
     "id": "reactrouter",
     "name": "React Router",
     "group": "frontend",

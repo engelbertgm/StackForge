@@ -56,6 +56,8 @@ export const allTags = [...new Set(techs.flatMap((t) => t.tags ?? []))].sort()
 export function validateCatalog(): string[] {
   const errors: string[] = []
   const seen = new Set<string>()
+  // a link or need may name a tech id or a capability; one that matches neither is a typo
+  const provided = new Set(techs.flatMap((t) => t.provides ?? []))
 
   for (const t of techs) {
     if (seen.has(t.id)) errors.push(`duplicate id: ${t.id}`)
@@ -67,13 +69,12 @@ export function validateCatalog(): string[] {
       errors.push(`${t.id}: section "${t.section}" is not one of ${g.name} sections`)
 
     for (const l of t.links ?? [])
-      if (!techs.some((o) => o.id === l.to)) errors.push(`${t.id}: link target "${l.to}" does not exist`)
+      if (!techById.has(l.to) && !provided.has(l.to)) errors.push(`${t.id}: link target "${l.to}" does not exist`)
     for (const c of t.conflicts ?? [])
       if (!techs.some((o) => o.id === c)) errors.push(`${t.id}: conflict target "${c}" does not exist`)
   }
 
   // a `needs` nothing can satisfy is a typo, not a stack problem
-  const provided = new Set(techs.flatMap((t) => t.provides ?? []))
   for (const t of techs)
     for (const n of t.needs ?? [])
       if (!provided.has(n) && !techById.has(n)) errors.push(`${t.id}: needs "${n}" which no tech provides`)

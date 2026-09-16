@@ -40,3 +40,9 @@ test('recommendations for a TypeScript web stack stay in TypeScript', () => {
   assert.deepEqual(fixesFor('test-unit', stack, techs).slice(0, 3).map((t) => t.id), ['vitest', 'jest', 'bun'])
   assert.equal(fixesFor('db-sql', pick('medusa'), techs)[0].id, 'postgresql')
 })
+
+test('GitHub Actions draws a line to what it runs and where it deploys', () => {
+  const { edges } = analyze(pick('git', 'github', 'githubactions', 'typescript', 'react', 'vite', 'eslint', 'vitest', 'playwright', 'vercel'), stackRules)
+  const from = edges.filter((e) => e.source === 'githubactions').map((e) => `${e.target}:${e.rel}`).sort()
+  assert.deepEqual(from, ['eslint:automates', 'github:extends', 'playwright:automates', 'typescript:automates', 'vercel:deploys', 'vitest:automates'])
+})

@@ -582,7 +582,8 @@ export function Inspector({ tech, problems }: { tech?: Tech; problems: Problem[]
 
 /** The legend. Docked in the bottom bar so it is always on screen and never covers a block. */
 function LegendRow() {
-  const shown: Rel[] = ['requires', 'consumes', 'queries', 'deploys', 'extends', 'tests', 'monitors', 'conflicts']
+  // one per colour on the canvas; siblings sharing a colour (hosts, syncs, tracks, builds) ride along
+  const shown: Rel[] = ['requires', 'consumes', 'queries', 'deploys', 'automates', 'extends', 'tests', 'styles', 'types', 'monitors', 'conflicts']
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-0.5 border-l border-white/10 pl-4">
       {shown.map((r) => (

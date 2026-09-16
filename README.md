@@ -21,7 +21,7 @@
 </p>
 <p align="center">
   <a href="#the-catalog">
-    <img src="https://img.shields.io/badge/catalog-364_technologies-3FCF8E?style=flat-square&logo=databricks&logoColor=white" alt="364 technologies" />
+    <img src="https://img.shields.io/badge/catalog-366_technologies-3FCF8E?style=flat-square&logo=databricks&logoColor=white" alt="366 technologies" />
   </a>
   <a href="#privacy">
     <img src="https://img.shields.io/badge/backend-none-6E7681?style=flat-square&logo=ghostery&logoColor=white" alt="No backend" />
@@ -79,7 +79,7 @@ show you a stack that could not exist.
 - Blocks align to their own box-mates and boxes to other boxes; **Re-arrange** puts
   everything back to the automatic layout
 
-**Finding things among 364 entries**
+**Finding things among 366 entries**
 - Filter by **Build** — pick "SaaS product" and every block that plays a part lights up
   wearing the part it plays: n8n as `Glue`, Stripe as `Billing`, Vitest as `Tests`
 - Filter by language or ecosystem tag; either way each box shows how much of it the filter covers
@@ -156,7 +156,7 @@ From those fields alone, `src/rules.ts` derives every behaviour:
 | `conflicts` | Hard incompatibility. Firebase lists `postgresql`, so selecting one greys out the other with *"Firebase is not compatible with PostgreSQL"*. Symmetric — declare it once. |
 | `exclusive` | Slot contention. Firebase and Supabase both claim `baas`; Vitest and Jest both claim `test-unit`. Pick one. |
 | `needs` | Red ring + tooltip when nothing in the stack `provides` that capability (or is that tech, for an id), and an arrow to the provider when something does. |
-| `links` | Typed arrows, drawn only when both ends are on the canvas. Vitest → Vite is `tests`; Next.js → React is `extends`. Optional `card` sets cardinality (`n-1`, `1-n`, `n-n`). |
+| `links` | Typed arrows, drawn only when both ends are on the canvas. Vitest → Vite is `tests`; Next.js → React is `extends`. `to` may name a capability instead of a tech id: GitHub Actions → `lint` draws to whichever linter is picked. Optional `card` sets cardinality (`n-1`, `1-n`, `n-n`). |
 | `langs` | The language-family badge on the block and the language filter. |
 | `provides` | Feeds the stack-wide rules in `catalog/rules.json` — *users with no auth*, *self-hosted API with no database*, *containers with no CI*. |
 

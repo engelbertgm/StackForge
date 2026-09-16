@@ -8,7 +8,7 @@ Adding a whole new box: add it to `groups.json` (with its `sections`), create `<
 then add two lines to `src/catalog/index.ts`. `pnpm check` fails loudly if a section name,
 link target or capability is misspelled.
 
-**Total in: 364**
+**Total in: 366**
 
 ---
 
@@ -18,15 +18,15 @@ link target or capability is misspelled.
 - **In** - Type layer: TypeScript, SQL
 - **Planned**: C, C++, Scala, Zig, Lua, R, Julia, Perl, Haskell, OCaml, Clojure, Groovy, WebAssembly
 
-## frontend - Frontend (46)
+## frontend - Frontend (48)
 - **In** - Build & Bundler: Vite, Webpack, Rspack, esbuild, Rollup, Turbopack
 - **In** - Framework: React, Vue, Svelte, Angular, Solid, Preact, Qwik, htmx, Alpine.js
 - **In** - Meta-framework: Next.js, Nuxt, SvelteKit, React Router/Remix, Astro
 - **In** - UI & Components: shadcn/ui, MUI, Chakra UI, Ant Design, Radix UI, Headless UI, HeroUI, Mantine, Bootstrap
 - **In** - Styling: Tailwind CSS, UnoCSS, Sass, styled-components, Emotion, CSS Modules
-- **In** - State & Data: Redux Toolkit, Zustand, Jotai, MobX, Pinia, TanStack Query, SWR, Apollo Client
+- **In** - State & Data: Redux Toolkit, Zustand, Jotai, MobX, Pinia, TanStack Query, SWR, Apollo Client, React Hook Form, Zod
 - **In** - Routing: React Router, TanStack Router, Vue Router
-- **Planned**: Gatsby, Ember, Lit, Stencil, Panda CSS, vanilla-extract, Valtio, XState, Effector, urql, Relay, React Hook Form, Zod, TanStack Table, AG Grid, TipTap, Monaco, PWA/Workbox, i18next
+- **Planned**: Gatsby, Ember, Lit, Stencil, Panda CSS, vanilla-extract, Valtio, XState, Effector, urql, Relay, TanStack Table, AG Grid, TipTap, Monaco, PWA/Workbox, i18next
 
 ## mobile - Mobile & Desktop (14)
 - **In** - Cross-platform: React Native, Flutter, Expo, Ionic, Capacitor, Kotlin Multiplatform
