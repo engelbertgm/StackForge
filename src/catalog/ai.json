@@ -24,7 +24,6 @@
     "name": "OpenAI",
     "group": "ai",
     "section": "Model providers",
-    "icon": "openai",
     "color": "#ffffff",
     "langs": [
       "ts",
@@ -82,7 +81,6 @@
     "name": "Groq",
     "group": "ai",
     "section": "Model providers",
-    "icon": "groq",
     "color": "#f55036",
     "langs": [
       "ts",
@@ -101,7 +99,6 @@
     "name": "AWS Bedrock",
     "group": "ai",
     "section": "Model providers",
-    "icon": "amazonwebservices",
     "color": "#ff9900",
     "langs": [
       "py",
@@ -244,7 +241,6 @@
     "name": "LlamaIndex",
     "group": "ai",
     "section": "Frameworks",
-    "icon": "llamaindex",
     "color": "#ffffff",
     "langs": [
       "py",
@@ -397,7 +393,6 @@
     "name": "Aider",
     "group": "ai",
     "section": "Coding agents",
-    "icon": "aider",
     "color": "#14b014",
     "langs": [
       "py"
@@ -438,7 +433,6 @@
     "name": "Firecrawl",
     "group": "ai",
     "section": "RAG & Retrieval",
-    "icon": "firecrawl",
     "color": "#ff5a1f",
     "langs": [
       "ts",
@@ -457,7 +451,6 @@
     "name": "Unstructured",
     "group": "ai",
     "section": "RAG & Retrieval",
-    "icon": "unstructured",
     "color": "#09d5a0",
     "langs": [
       "py"
@@ -475,7 +468,6 @@
     "name": "Langfuse",
     "group": "ai",
     "section": "Ops & Eval",
-    "icon": "langfuse",
     "color": "#ffffff",
     "langs": [
       "ts",

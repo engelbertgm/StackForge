@@ -1,15 +1,15 @@
 [
   { "id": "pnpm", "name": "pnpm", "group": "devops", "section": "Package managers", "icon": "pnpm", "color": "#f69220", "langs": ["js"],
     "desc": "Content-addressed store with hard links, so one copy of each package on disk. Use for monorepos and CI where install time and disk actually cost money.",
-    "provides": ["pkg"], "exclusive": ["js-pkg"], "needs": ["runtime"], "tags": ["web"], "url": "https://pnpm.io" },
+    "provides": ["pkg"], "exclusive": ["js-pkg"], "needs": ["js-runtime"], "tags": ["web"], "url": "https://pnpm.io" },
 
   { "id": "npm", "name": "npm", "group": "devops", "section": "Package managers", "icon": "npm", "color": "#cb3837", "langs": ["js"],
     "desc": "Ships with Node, works everywhere, no setup. Use when you want zero decisions and no extra install step.",
-    "provides": ["pkg"], "exclusive": ["js-pkg"], "needs": ["runtime"], "tags": ["web"] },
+    "provides": ["pkg"], "exclusive": ["js-pkg"], "needs": ["js-runtime"], "tags": ["web"] },
 
   { "id": "yarn", "name": "Yarn", "group": "devops", "section": "Package managers", "icon": "yarn", "color": "#2c8ebb", "langs": ["js"],
     "desc": "Workspaces, Plug-n-Play and patch support. Use in existing repos already standardised on it.",
-    "provides": ["pkg"], "exclusive": ["js-pkg"], "needs": ["runtime"], "tags": ["web"] },
+    "provides": ["pkg"], "exclusive": ["js-pkg"], "needs": ["js-runtime"], "tags": ["web"] },
 
   { "id": "uv", "name": "uv", "group": "devops", "section": "Package managers", "icon": "uv", "color": "#de5fe9", "langs": ["py"],
     "desc": "Rust-fast Python package and project manager replacing pip, venv and poetry. Use in every new Python project.",
@@ -101,7 +101,7 @@
     "desc": "Self-hosted PaaS on your own VPS, Heroku-style. Use when you want push-to-deploy without a per-seat bill.",
     "provides": ["hosting", "self-hosted"], "needs": ["container"], "exclusive": ["paas"], "tags": ["oss", "selfhost"] },
 
-  { "id": "aws", "name": "AWS", "group": "devops", "section": "Cloud providers", "icon": "amazonwebservices", "color": "#ff9900", "langs": ["none"],
+  { "id": "aws", "name": "AWS", "group": "devops", "section": "Cloud providers", "color": "#ff9900", "langs": ["none"],
     "desc": "Every primitive you could need, and a bill to match. Use when compliance, scale or existing commitments point there.",
     "provides": ["cloud"], "exclusive": ["cloud"], "tags": ["cloud", "aws"], "url": "https://console.aws.amazon.com" },
 
@@ -109,7 +109,7 @@
     "desc": "Strong data, ML and Kubernetes story. Use when BigQuery or GKE is the centre of the architecture.",
     "provides": ["cloud"], "exclusive": ["cloud"], "tags": ["cloud", "google"] },
 
-  { "id": "azure", "name": "Microsoft Azure", "group": "devops", "section": "Cloud providers", "icon": "microsoftazure", "color": "#0078d4", "langs": ["none"],
+  { "id": "azure", "name": "Microsoft Azure", "group": "devops", "section": "Cloud providers", "color": "#0078d4", "langs": ["none"],
     "desc": "Deep Active Directory, Office and .NET integration. Use in enterprises already paying Microsoft.",
     "provides": ["cloud"], "exclusive": ["cloud"], "tags": ["cloud", "microsoft", "enterprise"] },
 
@@ -141,11 +141,11 @@
     "desc": "Secret storage with dynamic credentials and audit logs. Use when secrets must rotate and every read is recorded.",
     "provides": ["secrets"], "exclusive": ["secrets"], "tags": ["infra", "enterprise"] },
 
-  { "id": "doppler", "name": "Doppler", "group": "devops", "section": "Secrets", "icon": "doppler", "color": "#3b82f6", "langs": ["none"],
+  { "id": "doppler", "name": "Doppler", "group": "devops", "section": "Secrets", "color": "#3b82f6", "langs": ["none"],
     "desc": "Syncs environment variables across environments and platforms. Use to stop passing .env files around in chat.",
     "provides": ["secrets"], "exclusive": ["secrets"], "tags": ["infra"] },
 
-  { "id": "infisical", "name": "Infisical", "group": "devops", "section": "Secrets", "icon": "infisical", "color": "#ebebeb", "langs": ["none"],
+  { "id": "infisical", "name": "Infisical", "group": "devops", "section": "Secrets", "color": "#ebebeb", "langs": ["none"],
     "desc": "Open-source secret management you can self-host. Use when secrets cannot sit with a third party.",
     "provides": ["secrets", "self-hosted"], "exclusive": ["secrets"], "tags": ["infra", "oss"] }
 ]

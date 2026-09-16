@@ -21,7 +21,7 @@
 </p>
 <p align="center">
   <a href="#the-catalog">
-    <img src="https://img.shields.io/badge/catalog-350_technologies-3FCF8E?style=flat-square&logo=databricks&logoColor=white" alt="350 technologies" />
+    <img src="https://img.shields.io/badge/catalog-364_technologies-3FCF8E?style=flat-square&logo=databricks&logoColor=white" alt="364 technologies" />
   </a>
   <a href="#privacy">
     <img src="https://img.shields.io/badge/backend-none-6E7681?style=flat-square&logo=ghostery&logoColor=white" alt="No backend" />
@@ -79,7 +79,7 @@ show you a stack that could not exist.
 - Blocks align to their own box-mates and boxes to other boxes; **Re-arrange** puts
   everything back to the automatic layout
 
-**Finding things among 350 entries**
+**Finding things among 364 entries**
 - Filter by **Build** — pick "SaaS product" and every block that plays a part lights up
   wearing the part it plays: n8n as `Glue`, Stripe as `Billing`, Vitest as `Tests`
 - Filter by language or ecosystem tag; either way each box shows how much of it the filter covers
@@ -139,12 +139,15 @@ Everything is driven by **data, not code**. Each technology is one JSON object i
   "icon": "supabase",
   "color": "#3fcf8e",
   "langs": ["sql", "ts"],
-  "desc": "Postgres with auth, storage and realtime on top. Use when you want a BaaS but refuse to give up SQL.",
-  "provides": ["db", "db-sql", "auth", "storage", "realtime"],
-  "exclusive": ["baas", "auth"],
+  "desc": "Postgres with auth, storage, realtime and an auto-generated API the browser calls directly. Use when you want a BaaS but refuse to give up SQL.",
+  "provides": ["db", "db-sql", "auth", "storage", "realtime", "api", "data-api", "vector"],
+  "exclusive": ["baas"],
   "links": [{ "to": "postgresql", "rel": "extends" }]
 }
 ```
+
+An add-on that only works with one product names that product's id instead of a capability,
+so Supabase Edge Functions declare `"needs": ["supabase"]` and no other database satisfies it.
 
 From those fields alone, `src/rules.ts` derives every behaviour:
 
@@ -152,7 +155,7 @@ From those fields alone, `src/rules.ts` derives every behaviour:
 |---|---|
 | `conflicts` | Hard incompatibility. Firebase lists `postgresql`, so selecting one greys out the other with *"Firebase is not compatible with PostgreSQL"*. Symmetric — declare it once. |
 | `exclusive` | Slot contention. Firebase and Supabase both claim `baas`; Vitest and Jest both claim `test-unit`. Pick one. |
-| `needs` | Red ring + tooltip when nothing in the stack `provides` that capability, and an arrow to the provider when something does. |
+| `needs` | Red ring + tooltip when nothing in the stack `provides` that capability (or is that tech, for an id), and an arrow to the provider when something does. |
 | `links` | Typed arrows, drawn only when both ends are on the canvas. Vitest → Vite is `tests`; Next.js → React is `extends`. Optional `card` sets cardinality (`n-1`, `1-n`, `n-n`). |
 | `langs` | The language-family badge on the block and the language filter. |
 | `provides` | Feeds the stack-wide rules in `catalog/rules.json` — *users with no auth*, *self-hosted API with no database*, *containers with no CI*. |

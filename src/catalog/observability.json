@@ -51,7 +51,6 @@
     "name": "Bugsnag",
     "group": "observability",
     "section": "Errors",
-    "icon": "smartbear",
     "color": "#4949e4",
     "langs": [
       "ts"
@@ -236,7 +235,6 @@
     "name": "Axiom",
     "group": "observability",
     "section": "Logs & Tracing",
-    "icon": "axiom",
     "color": "#00c1d4",
     "langs": [
       "none"
@@ -273,7 +271,6 @@
     "name": "UptimeRobot",
     "group": "observability",
     "section": "Uptime",
-    "icon": "uptimerobot",
     "color": "#3bd671",
     "langs": [
       "none"
@@ -292,7 +289,6 @@
     "name": "Healthchecks.io",
     "group": "observability",
     "section": "Uptime",
-    "icon": "healthchecksdotio",
     "color": "#4c7a3f",
     "langs": [
       "none"

@@ -9,10 +9,10 @@
     "sections": ["Cross-platform", "Native", "Desktop", "Distribution"] },
 
   { "id": "backend", "name": "Backend & API", "color": "#68a063", "order": 3,
-    "sections": ["Framework", "API layer", "Platform (BaaS)", "Jobs & Queues", "Realtime"] },
+    "sections": ["Framework", "API layer", "Platform (BaaS)", "Functions & Edge", "Jobs & Queues", "Realtime"] },
 
   { "id": "auth", "name": "Auth & Identity", "color": "#eb5424", "order": 4,
-    "sections": ["Hosted providers", "Self-hosted", "Protocols & Libraries"] },
+    "sections": ["Hosted providers", "Self-hosted", "Authorization", "Protocols & Libraries"] },
 
   { "id": "data", "name": "Data & Storage", "color": "#336791", "order": 5,
     "sections": ["Relational", "NoSQL & Document", "Cache & KV", "Search", "ORM & Query", "Warehouse & Lake", "Vector", "Object storage"] },

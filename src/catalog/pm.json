@@ -254,7 +254,6 @@
     "name": "Slack",
     "group": "pm",
     "section": "Communication",
-    "icon": "slack",
     "color": "#4a154b",
     "langs": [
       "none"
@@ -297,7 +296,6 @@
     "name": "Microsoft Teams",
     "group": "pm",
     "section": "Communication",
-    "icon": "microsoftteams",
     "color": "#6264a7",
     "langs": [
       "none"

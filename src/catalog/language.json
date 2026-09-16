@@ -8,15 +8,15 @@
 
   { "id": "nodejs", "name": "Node.js", "group": "language", "section": "JS Runtimes", "icon": "nodedotjs", "color": "#5fa04e", "langs": ["js", "ts"],
     "desc": "JS on the server. Use when you want the largest package ecosystem on earth and boring stability.",
-    "provides": ["runtime"], "exclusive": ["js-runtime"], "tags": ["web"], "url": "https://nodejs.org" },
+    "provides": ["js-runtime"], "exclusive": ["js-runtime"], "tags": ["web"], "url": "https://nodejs.org" },
 
   { "id": "bun", "name": "Bun", "group": "language", "section": "JS Runtimes", "icon": "bun", "color": "#fbf0df", "langs": ["js", "ts"],
     "desc": "Fast runtime with bundler, test runner and package manager built in. Use when you want one binary instead of five tools.",
-    "provides": ["runtime", "pkg", "test-unit", "bundler"], "exclusive": ["js-runtime"], "tags": ["web"], "url": "https://bun.sh" },
+    "provides": ["js-runtime", "pkg", "test-unit", "bundler"], "exclusive": ["js-runtime"], "tags": ["web"], "url": "https://bun.sh" },
 
   { "id": "deno", "name": "Deno", "group": "language", "section": "JS Runtimes", "icon": "deno", "color": "#70ffaf", "langs": ["js", "ts"],
     "desc": "Secure-by-default runtime with native TypeScript. Use when sandboxed permissions matter.",
-    "provides": ["runtime"], "exclusive": ["js-runtime"], "tags": ["web"], "url": "https://deno.com" },
+    "provides": ["js-runtime"], "exclusive": ["js-runtime"], "tags": ["web"], "url": "https://deno.com" },
 
   { "id": "python", "name": "Python", "group": "language", "section": "Languages", "icon": "python", "color": "#3776ab", "langs": ["py"],
     "desc": "Use for data work, scripting and ML, where readability beats raw speed.",

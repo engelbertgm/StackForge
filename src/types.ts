@@ -37,7 +37,7 @@ export interface Tech {
   desc: string
   /** capabilities this tech supplies to the stack */
   provides?: string[]
-  /** capabilities this tech cannot work without — unmet = red ring */
+  /** capabilities (or, for a product-specific add-on, tech ids) this tech cannot work without. Unmet = red ring */
   needs?: string[]
   /** hard incompatibilities (symmetric, you only declare it once) */
   conflicts?: string[]

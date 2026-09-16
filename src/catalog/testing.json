@@ -113,7 +113,6 @@
     "name": "RSpec",
     "group": "testing",
     "section": "Unit",
-    "icon": "rspec",
     "color": "#cc342d",
     "langs": [
       "ruby"
@@ -179,7 +178,6 @@
     "name": "Playwright",
     "group": "testing",
     "section": "End-to-end",
-    "icon": "playwright",
     "color": "#2ead33",
     "langs": [
       "ts",
@@ -409,7 +407,6 @@
     "name": "Pact",
     "group": "testing",
     "section": "Load & Contract",
-    "icon": "pact",
     "color": "#ffffff",
     "langs": [
       "ts",

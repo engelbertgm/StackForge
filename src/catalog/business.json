@@ -11,8 +11,7 @@
     ],
     "desc": "Enterprise resource planning for finance, supply chain and manufacturing. Use when it is already the system of record and you are integrating with it.",
     "provides": [
-      "erp",
-      "users"
+      "erp"
     ],
     "exclusive": [
       "erp"
@@ -31,11 +30,10 @@
     "langs": [
       "py"
     ],
-    "desc": "Modular open-source ERP covering CRM, inventory and invoicing. Use for SMEs that want SAP scope at a fraction of the cost.",
+    "desc": "Modular open-source ERP covering CRM, inventory, invoicing, e-commerce and helpdesk, with an XML-RPC/JSON-RPC API for integrations. Self-hosted it runs on Python and needs PostgreSQL. Use for SMEs that want SAP scope at a fraction of the cost.",
     "provides": [
       "erp",
       "crm",
-      "users",
       "self-hosted"
     ],
     "exclusive": [
@@ -44,22 +42,34 @@
     "tags": [
       "oss",
       "enterprise"
-    ]
+    ],
+    "needs": [
+      "postgresql"
+    ],
+    "links": [
+      {
+        "to": "postgresql",
+        "rel": "queries"
+      },
+      {
+        "to": "python",
+        "rel": "extends"
+      }
+    ],
+    "url": "https://www.odoo.com/web/login"
   },
   {
     "id": "netsuite",
     "name": "NetSuite",
     "group": "business",
     "section": "ERP",
-    "icon": "oracle",
     "color": "#f80000",
     "langs": [
       "js"
     ],
     "desc": "Cloud ERP and financials from Oracle. Use in mid-market companies that outgrew spreadsheets.",
     "provides": [
-      "erp",
-      "users"
+      "erp"
     ],
     "exclusive": [
       "erp"
@@ -73,15 +83,13 @@
     "name": "Salesforce",
     "group": "business",
     "section": "CRM & Marketing",
-    "icon": "salesforce",
     "color": "#00a1e0",
     "langs": [
       "apex"
     ],
     "desc": "The enterprise CRM, endlessly customisable. Use when sales operations are the centre of the business.",
     "provides": [
-      "crm",
-      "users"
+      "crm"
     ],
     "exclusive": [
       "crm"
@@ -89,11 +97,7 @@
     "tags": [
       "enterprise"
     ],
-    "url": "https://login.salesforce.com",
-    "needs": [
-      "auth",
-      "db"
-    ]
+    "url": "https://login.salesforce.com"
   },
   {
     "id": "hubspot",
@@ -107,18 +111,13 @@
     ],
     "desc": "CRM with marketing automation and forms built in. Use for inbound-led go-to-market without a Salesforce admin.",
     "provides": [
-      "crm",
-      "users"
+      "crm"
     ],
     "exclusive": [
       "crm"
     ],
     "tags": [
       "saas"
-    ],
-    "needs": [
-      "auth",
-      "db"
     ]
   },
   {
@@ -126,25 +125,19 @@
     "name": "Pipedrive",
     "group": "business",
     "section": "CRM & Marketing",
-    "icon": "pipedrive",
     "color": "#017737",
     "langs": [
       "none"
     ],
     "desc": "Simple pipeline-first CRM. Use for small sales teams who only want deals and stages.",
     "provides": [
-      "crm",
-      "users"
+      "crm"
     ],
     "exclusive": [
       "crm"
     ],
     "tags": [
       "saas"
-    ],
-    "needs": [
-      "auth",
-      "db"
     ]
   },
   {
@@ -162,7 +155,7 @@
       "email"
     ],
     "exclusive": [
-      "email"
+      "email-transactional"
     ],
     "tags": [
       "saas"
@@ -184,7 +177,7 @@
       "email"
     ],
     "exclusive": [
-      "email"
+      "email-marketing"
     ],
     "tags": [
       "saas"
@@ -195,7 +188,6 @@
     "name": "Customer.io",
     "group": "business",
     "section": "CRM & Marketing",
-    "icon": "customerio",
     "color": "#ffcd00",
     "langs": [
       "none"
@@ -204,15 +196,55 @@
     "provides": [
       "email"
     ],
-    "needs": [
-      "events"
-    ],
     "exclusive": [
-      "email"
+      "email-marketing"
     ],
     "tags": [
       "saas"
+    ],
+    "needs": [
+      "events"
     ]
+  },
+  {
+    "id": "klaviyo",
+    "name": "Klaviyo",
+    "group": "business",
+    "section": "CRM & Marketing",
+    "color": "#ffffff",
+    "langs": [
+      "none"
+    ],
+    "desc": "Email and SMS marketing driven by store data: abandoned carts, win-backs and segments by what people bought. Use for e-commerce marketing, alongside a transactional sender like Resend.",
+    "provides": [
+      "email",
+      "sms"
+    ],
+    "exclusive": [
+      "email-marketing"
+    ],
+    "links": [
+      {
+        "to": "shopify",
+        "rel": "syncs"
+      },
+      {
+        "to": "woocommerce",
+        "rel": "syncs"
+      },
+      {
+        "to": "medusa",
+        "rel": "syncs"
+      },
+      {
+        "to": "segment",
+        "rel": "consumes"
+      }
+    ],
+    "tags": [
+      "saas"
+    ],
+    "url": "https://www.klaviyo.com/login"
   },
   {
     "id": "stripe",
@@ -226,15 +258,10 @@
     ],
     "desc": "Payments, subscriptions, invoicing and tax with the best developer docs in the industry. Use as the default unless your market is unsupported.",
     "provides": [
-      "payments",
-      "users"
+      "payments"
     ],
     "exclusive": [
       "payments"
-    ],
-    "needs": [
-      "auth",
-      "db"
     ],
     "tags": [
       "saas"
@@ -253,18 +280,10 @@
     ],
     "desc": "Wallet checkout buyers already trust. Use as a secondary method to lift conversion.",
     "provides": [
-      "payments",
-      "users"
-    ],
-    "exclusive": [
       "payments"
     ],
     "tags": [
       "saas"
-    ],
-    "needs": [
-      "auth",
-      "db"
     ]
   },
   {
@@ -279,18 +298,13 @@
     ],
     "desc": "Single platform for global card, local and in-person payments. Use at high volume across many countries.",
     "provides": [
-      "payments",
-      "users"
+      "payments"
     ],
     "exclusive": [
       "payments"
     ],
     "tags": [
       "enterprise"
-    ],
-    "needs": [
-      "auth",
-      "db"
     ]
   },
   {
@@ -305,18 +319,13 @@
     ],
     "desc": "Merchant of record handling VAT and sales tax for you. Use for digital products sold worldwide by a small team.",
     "provides": [
-      "payments",
-      "users"
+      "payments"
     ],
     "exclusive": [
       "payments"
     ],
     "tags": [
       "saas"
-    ],
-    "needs": [
-      "auth",
-      "db"
     ]
   },
   {
@@ -331,18 +340,13 @@
     ],
     "desc": "Dominant payment rails in Latin America, including instalments. Use when selling in Mexico, Argentina or Brazil.",
     "provides": [
-      "payments",
-      "users"
+      "payments"
     ],
     "exclusive": [
       "payments"
     ],
     "tags": [
       "saas"
-    ],
-    "needs": [
-      "auth",
-      "db"
     ]
   },
   {
@@ -359,7 +363,6 @@
     "provides": [
       "commerce",
       "payments",
-      "users",
       "hosting"
     ],
     "exclusive": [
@@ -384,18 +387,26 @@
     "desc": "Commerce plugin for WordPress. Use when the site is already WordPress and the catalogue is small.",
     "provides": [
       "commerce",
-      "users",
       "self-hosted"
     ],
     "exclusive": [
       "commerce"
     ],
     "needs": [
-      "auth",
-      "db"
+      "db-sql"
     ],
     "tags": [
       "oss"
+    ],
+    "links": [
+      {
+        "to": "mysql",
+        "rel": "queries"
+      },
+      {
+        "to": "php",
+        "rel": "extends"
+      }
     ]
   },
   {
@@ -411,7 +422,6 @@
     "desc": "Headless open-source commerce engine in TypeScript. Use when the storefront must be fully custom.",
     "provides": [
       "commerce",
-      "users",
       "self-hosted",
       "api"
     ],
@@ -419,11 +429,21 @@
       "commerce"
     ],
     "needs": [
-      "auth",
-      "db"
+      "db-sql",
+      "js-runtime"
     ],
     "tags": [
       "oss"
+    ],
+    "links": [
+      {
+        "to": "postgresql",
+        "rel": "queries"
+      },
+      {
+        "to": "redis",
+        "rel": "consumes"
+      }
     ]
   },
   {
@@ -438,8 +458,7 @@
     ],
     "desc": "Ticketing, help centre and SLAs for support teams. Use when support volume needs queues and reporting.",
     "provides": [
-      "support",
-      "users"
+      "support"
     ],
     "exclusive": [
       "support"
@@ -447,10 +466,6 @@
     "tags": [
       "saas",
       "enterprise"
-    ],
-    "needs": [
-      "auth",
-      "db"
     ]
   },
   {
@@ -465,18 +480,13 @@
     ],
     "desc": "In-product messenger, help centre and AI answers. Use when support happens inside the app, not over email.",
     "provides": [
-      "support",
-      "users"
+      "support"
     ],
     "exclusive": [
       "support"
     ],
     "tags": [
       "saas"
-    ],
-    "needs": [
-      "auth",
-      "db"
     ]
   },
   {
@@ -484,15 +494,13 @@
     "name": "Crisp",
     "group": "business",
     "section": "Support",
-    "icon": "crisp",
     "color": "#1972f5",
     "langs": [
       "none"
     ],
-    "desc": "Affordable live chat and shared inbox. Use for small teams that want a chat bubble and nothing more.",
+    "desc": "Live chat widget, shared inbox and chatbot added with one script tag. Use for small teams that want a chat bubble on the site without adopting a full helpdesk.",
     "provides": [
-      "support",
-      "users"
+      "support"
     ],
     "exclusive": [
       "support"
@@ -500,9 +508,6 @@
     "tags": [
       "saas"
     ],
-    "needs": [
-      "auth",
-      "db"
-    ]
+    "url": "https://app.crisp.chat"
   }
 ]

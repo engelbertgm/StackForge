@@ -15,11 +15,11 @@
     "desc": "Hand-drawn style diagrams that nobody mistakes for a finished spec. Use for architecture sketches in a meeting.",
     "provides": ["diagrams"], "tags": ["design", "oss"] },
 
-  { "id": "styledictionary", "name": "Style Dictionary", "group": "design", "section": "Component systems", "icon": "amazon", "color": "#ff9900", "langs": ["ts"],
+  { "id": "styledictionary", "name": "Style Dictionary", "group": "design", "section": "Component systems", "color": "#ff9900", "langs": ["ts"],
     "desc": "Compiles design tokens into CSS, iOS and Android formats. Use when one palette must ship to several platforms.",
     "provides": ["tokens"], "needs": ["design"], "tags": ["design"] },
 
-  { "id": "reactaria", "name": "React Aria", "group": "design", "section": "Component systems", "icon": "adobe", "color": "#fa0f00", "langs": ["ts"],
+  { "id": "reactaria", "name": "React Aria", "group": "design", "section": "Component systems", "color": "#fa0f00", "langs": ["ts"],
     "desc": "Adobe behaviour hooks with serious accessibility and i18n. Use as the foundation under a custom design system.",
     "needs": ["ui"], "links": [{ "to": "react", "rel": "extends" }], "tags": ["design", "a11y"] },
 
@@ -31,7 +31,7 @@
     "desc": "Brand logos with official colours as SVG. Use for tech stack diagrams and integration pages, exactly like this app does.",
     "provides": ["icons"], "tags": ["design", "oss"], "url": "https://simpleicons.org" },
 
-  { "id": "heroicons", "name": "Heroicons", "group": "design", "section": "Icons & Assets", "icon": "heroicons", "color": "#8b5cf6", "langs": ["ts"],
+  { "id": "heroicons", "name": "Heroicons", "group": "design", "section": "Icons & Assets", "color": "#8b5cf6", "langs": ["ts"],
     "desc": "Icon set from the Tailwind team in outline and solid. Use when the project already uses Tailwind.",
     "provides": ["icons"], "exclusive": ["icons"], "links": [{ "to": "tailwindcss", "rel": "styles" }], "tags": ["design"] },
 

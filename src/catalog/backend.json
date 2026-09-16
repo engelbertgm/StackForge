@@ -1,15 +1,15 @@
 [
   { "id": "express", "name": "Express", "group": "backend", "section": "Framework", "icon": "express", "color": "#ffffff", "langs": ["ts", "js"],
     "desc": "Minimal unopinionated Node HTTP framework. Use when you want no magic and every tutorial on the internet to apply.",
-    "provides": ["api"], "exclusive": ["node-framework"], "needs": ["runtime"], "tags": ["backend"] },
+    "provides": ["api"], "exclusive": ["node-framework"], "needs": ["js-runtime"], "tags": ["backend"] },
 
   { "id": "fastify", "name": "Fastify", "group": "backend", "section": "Framework", "icon": "fastify", "color": "#ffffff", "langs": ["ts"],
     "desc": "Fast Node framework with schema-based validation built in. Use when throughput and typed routes both matter.",
-    "provides": ["api"], "exclusive": ["node-framework"], "needs": ["runtime"], "tags": ["backend"] },
+    "provides": ["api"], "exclusive": ["node-framework"], "needs": ["js-runtime"], "tags": ["backend"] },
 
   { "id": "nestjs", "name": "NestJS", "group": "backend", "section": "Framework", "icon": "nestjs", "color": "#e0234e", "langs": ["ts"],
     "desc": "Angular-style modules and DI for Node. Use on large teams that want enforced structure.",
-    "provides": ["api"], "exclusive": ["node-framework"], "needs": ["runtime"], "tags": ["backend", "enterprise"] },
+    "provides": ["api"], "exclusive": ["node-framework"], "needs": ["js-runtime"], "tags": ["backend", "enterprise"] },
 
   { "id": "hono", "name": "Hono", "group": "backend", "section": "Framework", "icon": "hono", "color": "#e36002", "langs": ["ts"],
     "desc": "Tiny web framework that runs on every JS runtime and edge platform. Use for edge functions and small APIs.",
@@ -30,7 +30,7 @@
 
   { "id": "laravel", "name": "Laravel", "group": "backend", "section": "Framework", "icon": "laravel", "color": "#ff2d20", "langs": ["php"],
     "desc": "Full-stack PHP with ORM, queues, auth and scheduling. Use when one developer must cover the whole product.",
-    "provides": ["api", "orm", "auth", "queue"], "needs": ["db"], "links": [{ "to": "php", "rel": "extends" }], "tags": ["backend"] },
+    "provides": ["api", "orm", "auth", "queue", "scheduler"], "needs": ["db"], "links": [{ "to": "php", "rel": "extends" }], "tags": ["backend"] },
 
   { "id": "rails", "name": "Ruby on Rails", "group": "backend", "section": "Framework", "icon": "rubyonrails", "color": "#d30001", "langs": ["ruby"],
     "desc": "Convention over configuration, generators for everything. Use to go from idea to CRUD app in a day.",
@@ -76,9 +76,9 @@
     "tags": ["cloud", "google"], "url": "https://console.firebase.google.com" },
 
   { "id": "supabase", "name": "Supabase", "group": "backend", "section": "Platform (BaaS)", "icon": "supabase", "color": "#3fcf8e", "langs": ["sql", "ts"],
-    "desc": "Postgres with auth, storage, realtime and row-level security on top. Use when you want a BaaS but refuse to give up SQL.",
-    "provides": ["db", "db-sql", "auth", "storage", "realtime", "api", "vector"],
-    "exclusive": ["baas", "auth"], "links": [{ "to": "postgresql", "rel": "extends" }],
+    "desc": "Postgres with auth, storage, realtime and an auto-generated API the browser calls directly, guarded by row-level security. Use when you want a BaaS but refuse to give up SQL. It is the backend: no separate server needed.",
+    "provides": ["db", "db-sql", "auth", "storage", "realtime", "api", "data-api", "vector"],
+    "exclusive": ["baas"], "links": [{ "to": "postgresql", "rel": "extends" }],
     "tags": ["cloud"], "url": "https://supabase.com/dashboard" },
 
   { "id": "appwrite", "name": "Appwrite", "group": "backend", "section": "Platform (BaaS)", "icon": "appwrite", "color": "#fd366e", "langs": ["ts"],
@@ -93,35 +93,57 @@
     "desc": "Reactive TypeScript backend where queries update the UI automatically. Use for collaborative apps with live state.",
     "provides": ["db", "realtime", "api", "serverless"], "exclusive": ["baas"], "tags": ["cloud"] },
 
+  { "id": "supabasefunctions", "name": "Supabase Edge Functions", "group": "backend", "section": "Functions & Edge", "icon": "supabase", "color": "#3fcf8e", "langs": ["ts"],
+    "desc": "TypeScript functions on Deno, deployed beside your Supabase project with its keys and database already wired in. Use for webhooks, payment callbacks and any call that holds a secret the browser must not see.",
+    "provides": ["serverless", "edge", "api"], "needs": ["supabase"],
+    "links": [{ "to": "supabase", "rel": "extends" }, { "to": "deno", "rel": "extends" }],
+    "tags": ["backend", "edge", "serverless"], "url": "https://supabase.com/dashboard" },
+
+  { "id": "cfworkers", "name": "Cloudflare Workers", "group": "backend", "section": "Functions & Edge", "icon": "cloudflareworkers", "color": "#f38020", "langs": ["ts"],
+    "desc": "V8 isolates in hundreds of cities with no cold start, plus Cron Triggers, KV and Durable Objects. Use for APIs and middleware that must answer close to the user.",
+    "provides": ["serverless", "edge", "api", "scheduler"], "links": [{ "to": "hono", "rel": "hosts" }],
+    "tags": ["cloud", "edge", "serverless"], "url": "https://dash.cloudflare.com" },
+
+  { "id": "awslambda", "name": "AWS Lambda", "group": "backend", "section": "Functions & Edge", "color": "#ff9900", "langs": ["ts", "py", "go", "java"],
+    "desc": "Pay-per-invocation functions triggered by nearly every AWS event source. Use when uploads, queue messages or HTTP calls should run code with no server to keep alive.",
+    "provides": ["serverless", "api"], "links": [{ "to": "sqs", "rel": "consumes" }, { "to": "s3", "rel": "consumes" }],
+    "tags": ["cloud", "aws", "serverless"], "url": "https://console.aws.amazon.com/lambda" },
+
+  { "id": "denodeploy", "name": "Deno Deploy", "group": "backend", "section": "Functions & Edge", "icon": "deno", "color": "#70ffaf", "langs": ["ts"],
+    "desc": "Globally distributed Deno isolates with built-in KV, queues and cron, deployed from git. Use for TypeScript APIs you want live with no build step and no infrastructure.",
+    "provides": ["serverless", "edge", "api", "hosting", "scheduler"], "links": [{ "to": "deno", "rel": "extends" }],
+    "tags": ["cloud", "edge", "serverless"], "url": "https://dash.deno.com" },
+
   { "id": "bullmq", "name": "BullMQ", "group": "backend", "section": "Jobs & Queues", "icon": "redis", "color": "#ff4438", "langs": ["ts"],
-    "desc": "Redis-backed job queue for Node with retries and rate limits. Use for email sending, image processing and webhooks.",
-    "provides": ["queue"], "needs": ["cache"], "links": [{ "to": "redis", "rel": "consumes" }], "tags": ["backend"] },
+    "desc": "Redis-backed job queue and repeatable schedules for Node, with retries and rate limits. Use when you already run a long-lived Node worker. On Supabase or serverless, use Inngest, Trigger.dev or QStash instead.",
+    "provides": ["queue", "scheduler"], "needs": ["cache", "js-runtime"],
+    "links": [{ "to": "redis", "rel": "consumes" }, { "to": "valkey", "rel": "consumes" }], "tags": ["backend"], "url": "https://docs.bullmq.io" },
 
   { "id": "celery", "name": "Celery", "group": "backend", "section": "Jobs & Queues", "icon": "celery", "color": "#37814a", "langs": ["py"],
-    "desc": "Distributed task queue for Python. Use when Django or FastAPI work must move off the request thread.",
-    "provides": ["queue"], "needs": ["cache"], "links": [{ "to": "python", "rel": "extends" }], "tags": ["backend"] },
+    "desc": "Distributed task queue for Python, with Celery Beat for periodic tasks. Use when Django or FastAPI work must move off the request thread.",
+    "provides": ["queue", "scheduler"], "needs": ["cache"], "links": [{ "to": "python", "rel": "extends" }], "tags": ["backend"] },
 
   { "id": "sidekiq", "name": "Sidekiq", "group": "backend", "section": "Jobs & Queues", "icon": "sidekiq", "color": "#b1003e", "langs": ["ruby"],
     "desc": "Threaded Redis-backed jobs for Rails. Use as the default background processor in any Rails app.",
     "provides": ["queue"], "needs": ["cache"], "tags": ["backend"] },
 
-  { "id": "inngest", "name": "Inngest", "group": "backend", "section": "Jobs & Queues", "icon": "inngest", "color": "#ffffff", "langs": ["ts"],
-    "desc": "Durable event-driven functions with steps and retries, no queue to run. Use on serverless where you cannot keep a worker alive.",
-    "provides": ["queue"], "tags": ["backend", "serverless"] },
+  { "id": "inngest", "name": "Inngest", "group": "backend", "section": "Jobs & Queues", "color": "#ffffff", "langs": ["ts"],
+    "desc": "Durable event-driven functions with steps, retries and cron, no queue to run. It calls your functions over HTTP, so it needs an endpoint: a Next.js route, a Supabase Edge Function or any API. Use on serverless where you cannot keep a worker alive.",
+    "provides": ["queue", "scheduler"], "needs": ["api"], "tags": ["backend", "serverless"], "url": "https://app.inngest.com" },
 
   { "id": "socketio", "name": "Socket.IO", "group": "backend", "section": "Realtime", "icon": "socketdotio", "color": "#ffffff", "langs": ["ts"],
     "desc": "WebSocket abstraction with rooms, fallbacks and reconnection. Use for chat and live cursors on your own server.",
-    "provides": ["realtime"], "needs": ["runtime"], "tags": ["backend"] },
+    "provides": ["realtime"], "needs": ["js-runtime"], "tags": ["backend"] },
 
   { "id": "pusher", "name": "Pusher", "group": "backend", "section": "Realtime", "icon": "pusher", "color": "#300d4f", "langs": ["ts"],
     "desc": "Hosted pub/sub channels over WebSockets. Use when you want realtime without operating socket servers.",
     "provides": ["realtime"], "tags": ["cloud"], "url": "https://dashboard.pusher.com" },
 
-  { "id": "ably", "name": "Ably", "group": "backend", "section": "Realtime", "icon": "ably", "color": "#ff5416", "langs": ["ts"],
+  { "id": "ably", "name": "Ably", "group": "backend", "section": "Realtime", "color": "#ff5416", "langs": ["ts"],
     "desc": "Realtime messaging with guaranteed ordering and delivery. Use when dropped events would be a correctness bug.",
     "provides": ["realtime"], "tags": ["cloud"] },
 
-  { "id": "liveblocks", "name": "Liveblocks", "group": "backend", "section": "Realtime", "icon": "liveblocks", "color": "#ffffff", "langs": ["ts"],
+  { "id": "liveblocks", "name": "Liveblocks", "group": "backend", "section": "Realtime", "color": "#ffffff", "langs": ["ts"],
     "desc": "Presence, comments and conflict-free collaborative state. Use to add multiplayer to an editor or canvas.",
     "provides": ["realtime", "users"], "tags": ["cloud"] }
 ]

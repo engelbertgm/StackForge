@@ -76,7 +76,7 @@ export function validateCatalog(): string[] {
   const provided = new Set(techs.flatMap((t) => t.provides ?? []))
   for (const t of techs)
     for (const n of t.needs ?? [])
-      if (!provided.has(n)) errors.push(`${t.id}: needs "${n}" which no tech provides`)
+      if (!provided.has(n) && !techById.has(n)) errors.push(`${t.id}: needs "${n}" which no tech provides`)
 
   for (const r of stackRules)
     for (const c of [...r.when, ...r.requires])

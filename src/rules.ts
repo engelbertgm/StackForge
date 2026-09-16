@@ -20,6 +20,30 @@ export interface Analysis {
 
 const pair = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`)
 
+/**
+ * Does `t` meet this need? A need names a capability, or a tech id when only that one product
+ * will do: Supabase Edge Functions need Supabase itself, not any database.
+ */
+export const supplies = (t: Tech, need: string) => t.id === need || !!t.provides?.includes(need)
+
+/**
+ * What would fill a gap, best first. Cheapest is a single-purpose tool, in a language the stack
+ * already speaks, that opens no new gap of its own. Without this a missing `orm` offered Django,
+ * Laravel, Rails and Spring ahead of Prisma, and missing error tracking offered Langfuse.
+ */
+export function fixesFor(need: string, selected: Tech[], catalog: Tech[], limit = 4): Tech[] {
+  const on = new Set(selected.map((t) => t.id))
+  const langs = new Set(selected.flatMap((t) => t.langs).filter((l) => l !== 'none'))
+  const cost = (t: Tech) =>
+    2 * (t.provides?.length ?? 0) +
+    (t.langs.some((l) => langs.has(l)) ? 0 : 10) +
+    10 * (t.needs ?? []).filter((n) => !selected.some((s) => supplies(s, n))).length
+  return catalog
+    .filter((t) => !on.has(t.id) && supplies(t, need) && !blockedBy(t, selected))
+    .sort((a, b) => cost(a) - cost(b))
+    .slice(0, limit)
+}
+
 /** Why `candidate` cannot join `selected`, or null if it can. */
 export function blockedBy(candidate: Tech, selected: Tech[]): string | null {
   for (const s of selected) {
@@ -57,7 +81,7 @@ export function analyze(selected: Tech[], stackRules: StackRule[]): Analysis {
     // A need is a real dependency: draw it to every provider, because that is the
     // relationship the user is trying to see. Many needers, one provider -> n-1.
     for (const need of t.needs ?? []) {
-      const providers = selected.filter((o) => o.id !== t.id && o.provides?.includes(need))
+      const providers = selected.filter((o) => o.id !== t.id && supplies(o, need))
       for (const p of providers) push(t.id, p.id, 'requires', 'n-1')
       if (!providers.length) {
         problems.push({ techId: t.id, severity: 'error', message: `Missing: nothing in this stack provides "${need}"` })

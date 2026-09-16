@@ -15,7 +15,7 @@
     "desc": "Community fork of MySQL with extra engines. Use when you want MySQL compatibility under a freer licence.",
     "provides": ["db", "db-sql"], "tags": ["oss"] },
 
-  { "id": "mssql", "name": "SQL Server", "group": "data", "section": "Relational", "icon": "mssql", "color": "#cc2927", "langs": ["sql"],
+  { "id": "mssql", "name": "SQL Server", "group": "data", "section": "Relational", "color": "#cc2927", "langs": ["sql"],
     "desc": "Microsoft relational database with deep .NET and Power BI integration. Use in Microsoft-centric enterprises.",
     "provides": ["db", "db-sql"], "tags": ["enterprise", "microsoft"] },
 
@@ -39,7 +39,7 @@
     "desc": "Document store with flexible schemas. Use when the shape of your data genuinely varies per record.",
     "provides": ["db", "db-nosql"], "tags": ["oss"], "url": "https://cloud.mongodb.com" },
 
-  { "id": "dynamodb", "name": "DynamoDB", "group": "data", "section": "NoSQL & Document", "icon": "amazondynamodb", "color": "#4053d6", "langs": ["none"],
+  { "id": "dynamodb", "name": "DynamoDB", "group": "data", "section": "NoSQL & Document", "color": "#4053d6", "langs": ["none"],
     "desc": "AWS key-value store with single-digit millisecond reads at any scale. Use when access patterns are known and fixed.",
     "provides": ["db", "db-nosql"], "tags": ["cloud", "aws"] },
 
@@ -55,11 +55,11 @@
     "desc": "In-memory key-value store with lists, sets and pub/sub. Use for caching, sessions, rate limits and job queues.",
     "provides": ["cache"], "exclusive": ["cache"], "tags": ["oss"] },
 
-  { "id": "valkey", "name": "Valkey", "group": "data", "section": "Cache & KV", "icon": "valkey", "color": "#ff4438", "langs": ["none"],
+  { "id": "valkey", "name": "Valkey", "group": "data", "section": "Cache & KV", "color": "#ff4438", "langs": ["none"],
     "desc": "Linux Foundation fork of Redis after the licence change. Use when the licence matters to your legal team.",
     "provides": ["cache"], "exclusive": ["cache"], "tags": ["oss"] },
 
-  { "id": "memcached", "name": "Memcached", "group": "data", "section": "Cache & KV", "icon": "memcached", "color": "#288d1f", "langs": ["none"],
+  { "id": "memcached", "name": "Memcached", "group": "data", "section": "Cache & KV", "color": "#288d1f", "langs": ["none"],
     "desc": "Pure in-memory cache, nothing else. Use when you need a cache and refuse the temptation to store state in it.",
     "provides": ["cache"], "exclusive": ["cache"], "tags": ["oss"] },
 
@@ -75,7 +75,7 @@
     "desc": "Typo-tolerant instant search you can self-host in minutes. Use when Elasticsearch is far more than you need.",
     "provides": ["search", "self-hosted"], "exclusive": ["search"], "tags": ["oss"] },
 
-  { "id": "typesense", "name": "Typesense", "group": "data", "section": "Search", "icon": "typesense", "color": "#d52b9c", "langs": ["cpp"],
+  { "id": "typesense", "name": "Typesense", "group": "data", "section": "Search", "color": "#d52b9c", "langs": ["cpp"],
     "desc": "Fast open-source search with simple defaults. Use as a self-hosted Algolia alternative.",
     "provides": ["search", "self-hosted"], "exclusive": ["search"], "tags": ["oss"] },
 
@@ -123,7 +123,7 @@
     "desc": "In-process analytical database that queries Parquet and CSV directly. Use for local analysis without a warehouse bill.",
     "provides": ["warehouse"], "tags": ["oss", "data", "embedded"] },
 
-  { "id": "dbt", "name": "dbt", "group": "data", "section": "Warehouse & Lake", "icon": "dbt", "color": "#ff694b", "langs": ["sql"],
+  { "id": "dbt", "name": "dbt", "group": "data", "section": "Warehouse & Lake", "color": "#ff694b", "langs": ["sql"],
     "desc": "Version-controlled SQL transformations with tests and lineage. Use to turn raw warehouse tables into trusted models.",
     "provides": ["etl"], "needs": ["warehouse"], "tags": ["data"] },
 
@@ -131,7 +131,7 @@
     "desc": "Vector similarity search as a Postgres extension. Use when you already run Postgres and refuse a second database.",
     "provides": ["vector"], "needs": ["db-sql"], "links": [{ "to": "postgresql", "rel": "extends" }], "tags": ["ml", "oss"] },
 
-  { "id": "pinecone", "name": "Pinecone", "group": "data", "section": "Vector", "icon": "pinecone", "color": "#000000", "langs": ["py", "ts"],
+  { "id": "pinecone", "name": "Pinecone", "group": "data", "section": "Vector", "color": "#000000", "langs": ["py", "ts"],
     "desc": "Fully managed vector database. Use when you want RAG retrieval working without operating an index.",
     "provides": ["vector"], "tags": ["cloud", "ml"], "url": "https://app.pinecone.io" },
 
@@ -139,15 +139,15 @@
     "desc": "Open-source vector search with rich payload filtering. Use when metadata filters matter as much as similarity.",
     "provides": ["vector", "self-hosted"], "tags": ["oss", "ml"] },
 
-  { "id": "weaviate", "name": "Weaviate", "group": "data", "section": "Vector", "icon": "weaviate", "color": "#7ad6ab", "langs": ["go"],
+  { "id": "weaviate", "name": "Weaviate", "group": "data", "section": "Vector", "color": "#7ad6ab", "langs": ["go"],
     "desc": "Vector database with built-in vectoriser modules and hybrid search. Use when you want embeddings generated for you.",
     "provides": ["vector"], "tags": ["oss", "ml"] },
 
-  { "id": "chroma", "name": "Chroma", "group": "data", "section": "Vector", "icon": "chroma", "color": "#ffde2d", "langs": ["py"],
+  { "id": "chroma", "name": "Chroma", "group": "data", "section": "Vector", "color": "#ffde2d", "langs": ["py"],
     "desc": "Embedded vector store that runs in your Python process. Use for prototypes and notebooks before you need a server.",
     "provides": ["vector"], "tags": ["oss", "ml", "embedded"] },
 
-  { "id": "s3", "name": "Amazon S3", "group": "data", "section": "Object storage", "icon": "amazons3", "color": "#569a31", "langs": ["none"],
+  { "id": "s3", "name": "Amazon S3", "group": "data", "section": "Object storage", "color": "#569a31", "langs": ["none"],
     "desc": "The object storage everything else imitates. Use for uploads, backups and static assets.",
     "provides": ["storage"], "tags": ["cloud", "aws"] },
 

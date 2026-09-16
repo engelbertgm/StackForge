@@ -48,7 +48,6 @@
     "name": "Rspack",
     "group": "frontend",
     "section": "Build & Bundler",
-    "icon": "rspack",
     "color": "#f93920",
     "langs": [
       "ts",

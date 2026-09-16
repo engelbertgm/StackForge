@@ -7,7 +7,7 @@
     "desc": "Event analytics with cohorts and retention reports. Use when product managers live inside funnel analysis.",
     "provides": ["analytics"], "exclusive": ["product-analytics"], "tags": ["saas"] },
 
-  { "id": "amplitude", "name": "Amplitude", "group": "analytics", "section": "Product analytics", "icon": "amplitude", "color": "#1e61f0", "langs": ["ts"],
+  { "id": "amplitude", "name": "Amplitude", "group": "analytics", "section": "Product analytics", "color": "#1e61f0", "langs": ["ts"],
     "desc": "Behavioural analytics with strong cohort and journey tooling. Use for large consumer products with dedicated analysts.",
     "provides": ["analytics"], "exclusive": ["product-analytics"], "tags": ["saas"] },
 
@@ -27,11 +27,11 @@
     "desc": "Full-featured analytics you host, with raw data ownership. Use where GDPR makes Google Analytics awkward.",
     "provides": ["analytics", "self-hosted"], "exclusive": ["web-analytics"], "needs": ["db"], "tags": ["oss", "privacy"] },
 
-  { "id": "powerbi", "name": "Power BI", "group": "analytics", "section": "BI & Dashboards", "icon": "powerbi", "color": "#f2c811", "langs": ["dax"],
+  { "id": "powerbi", "name": "Power BI", "group": "analytics", "section": "BI & Dashboards", "color": "#f2c811", "langs": ["dax"],
     "desc": "Microsoft BI with DAX models and Office integration. Use where the business already runs on Excel and Azure.",
     "provides": ["bi"], "needs": ["db"], "exclusive": ["bi"], "tags": ["microsoft", "enterprise"], "url": "https://app.powerbi.com" },
 
-  { "id": "tableau", "name": "Tableau", "group": "analytics", "section": "BI & Dashboards", "icon": "tableau", "color": "#e97627", "langs": ["none"],
+  { "id": "tableau", "name": "Tableau", "group": "analytics", "section": "BI & Dashboards", "color": "#e97627", "langs": ["none"],
     "desc": "Exploratory visual analysis for analysts. Use when discovery and storytelling matter more than embedding.",
     "provides": ["bi"], "needs": ["db"], "exclusive": ["bi"], "tags": ["enterprise"] },
 
@@ -55,7 +55,7 @@
     "desc": "Canvas charts with almost no setup. Use for a handful of charts on a plain page.",
     "provides": ["charts"], "exclusive": ["charts"], "tags": ["web"] },
 
-  { "id": "d3", "name": "D3.js", "group": "analytics", "section": "Charting libraries", "icon": "d3dotjs", "color": "#f9a03c", "langs": ["js"],
+  { "id": "d3", "name": "D3.js", "group": "analytics", "section": "Charting libraries", "color": "#f9a03c", "langs": ["js"],
     "desc": "Low-level data-driven DOM manipulation. Use when the visualisation does not exist in any chart library.",
     "provides": ["charts"], "tags": ["web"] },
 
@@ -71,11 +71,11 @@
     "desc": "D3 primitives as React components, no chart opinions. Use when the design is bespoke but you want React rendering.",
     "provides": ["charts"], "needs": ["ui"], "tags": ["web"] },
 
-  { "id": "segment", "name": "Segment", "group": "analytics", "section": "Event pipelines", "icon": "segment", "color": "#52bd95", "langs": ["ts"],
+  { "id": "segment", "name": "Segment", "group": "analytics", "section": "Event pipelines", "color": "#52bd95", "langs": ["ts"],
     "desc": "Collects events once and fans them out to every tool. Use when marketing keeps asking for another tracking script.",
     "provides": ["events"], "exclusive": ["cdp"], "tags": ["saas"] },
 
-  { "id": "rudderstack", "name": "RudderStack", "group": "analytics", "section": "Event pipelines", "icon": "rudderstack", "color": "#3b82f6", "langs": ["ts"],
+  { "id": "rudderstack", "name": "RudderStack", "group": "analytics", "section": "Event pipelines", "color": "#3b82f6", "langs": ["ts"],
     "desc": "Warehouse-first customer data pipeline, self-hostable. Use when event data must land in your warehouse first.",
     "provides": ["events", "self-hosted"], "needs": ["warehouse"], "exclusive": ["cdp"], "tags": ["oss", "data"] }
 ]

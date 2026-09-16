@@ -1,7 +1,7 @@
 /* Run: pnpm check  —  plain node:test, no framework. */
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { analyze, blockedBy } from './rules.ts'
+import { analyze, blockedBy, fixesFor } from './rules.ts'
 import type { StackRule, Tech } from './types.ts'
 
 const t = (id: string, extra: Partial<Tech> = {}): Tech => ({
@@ -106,4 +106,25 @@ test('stack rule fires only when trigger present and requirement absent', () => 
   assert.equal(analyze([app], [rule]).problems[0].message, 'Users but no auth provider')
   assert.deepEqual(analyze([app, supabase], [rule]).problems, [])
   assert.deepEqual(analyze([postgres], [rule]).problems, [])
+})
+
+test('a need can name one specific product instead of a capability', () => {
+  const edgeFn = t('supabasefunctions', { needs: ['supabase'] })
+  assert.match(analyze([edgeFn], noRules).problems[0].message, /provides "supabase"/)
+  assert.deepEqual(analyze([edgeFn, supabase], noRules).problems, [])
+  // any other database does not count
+  assert.equal(analyze([edgeFn, postgres], noRules).problems.length, 1)
+})
+
+test('fixes rank a focused tool in the stack language ahead of a framework or a new gap', () => {
+  const next = t('next', { langs: ['ts'], provides: ['api'] })
+  const django = t('django', { langs: ['py'], provides: ['api', 'orm', 'auth'] })
+  const sqlalchemy = t('sqlalchemy', { langs: ['py'], provides: ['orm'] })
+  const drizzle = t('drizzle', { langs: ['ts'], provides: ['orm'] })
+  const catalog = [django, sqlalchemy, drizzle]
+  assert.deepEqual(fixesFor('orm', [next], catalog).map((x) => x.id), ['drizzle', 'sqlalchemy', 'django'])
+
+  const langfuse = t('langfuse', { provides: ['monitoring'], needs: ['llm'] })
+  const sentry = t('sentry', { provides: ['monitoring'] })
+  assert.deepEqual(fixesFor('monitoring', [next], [langfuse, sentry]).map((x) => x.id), ['sentry', 'langfuse'])
 })

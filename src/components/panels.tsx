@@ -17,7 +17,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { allLangs, allTags, builds, groups, techById, techs } from '../catalog'
 import { decryptSecret, encryptSecret } from '../crypto'
-import { blockedBy } from '../rules'
+import { blockedBy, fixesFor } from '../rules'
 import { highlightChip, matchesHighlight, useStack, type Highlight } from '../store'
 import type { Analysis } from '../rules'
 import type { Problem, Rel, Tech } from '../types'
@@ -444,17 +444,15 @@ export function NeedsPanel({ analysis }: { analysis: Analysis }) {
   const { added, add } = useStack()
   const [open, setOpen] = useState(true)
 
-  const suggestions = useMemo(
-    () =>
-      analysis.missing.map(({ cap, neededBy }) => ({
-        cap,
-        neededBy: neededBy.map((id) => techById.get(id)?.name ?? id),
-        fixes: techs
-          .filter((t) => !added.includes(t.id) && t.provides?.includes(cap) && !blockedBy(t, added.map((i) => techById.get(i)!)))
-          .slice(0, 4),
-      })),
-    [analysis.missing, added],
-  )
+  const suggestions = useMemo(() => {
+    // an imported stack.json can hold ids the catalog no longer has
+    const selected = added.map((id) => techById.get(id)).filter((t): t is Tech => !!t)
+    return analysis.missing.map(({ cap, neededBy }) => ({
+      cap,
+      neededBy: neededBy.map((id) => techById.get(id)?.name ?? id),
+      fixes: fixesFor(cap, selected, techs),
+    }))
+  }, [analysis.missing, added])
 
   if (!suggestions.length) return null
 
