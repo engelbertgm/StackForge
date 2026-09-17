@@ -1,0 +1,59 @@
+name: Catalog request
+description: Add a missing technology, or fix a wrong conflict, need or arrow
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Request
+      options:
+        - Add a technology
+        - Fix an existing technology
+    validations:
+      required: true
+  - type: input
+    id: tech
+    attributes:
+      label: Technology
+      placeholder: Strapi
+    validations:
+      required: true
+  - type: dropdown
+    id: group
+    attributes:
+      label: Box
+      options:
+        - Languages & Runtimes
+        - Frontend
+        - Mobile & Desktop
+        - Backend & API
+        - Auth & Identity
+        - Data & Storage
+        - AI & LLM
+        - Automation & Pipelines
+        - Testing & Quality
+        - DevOps & Infra
+        - Observability
+        - Analytics & BI
+        - Design & UI
+        - Project & Collaboration
+        - Business Systems
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What should change
+      description: For a new technology, what it provides, needs and conflicts with. For a fix, what is wrong now and what is right.
+      placeholder: |
+        Strapi is a headless CMS that provides an API and needs a SQL database.
+        It should draw a "queries" arrow to PostgreSQL.
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: Official docs or a page that confirms the compatibility.
+      placeholder: https://docs.strapi.io
