@@ -38,7 +38,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/canvas.png" alt="StackForge in dark theme: a 21-technology SaaS stack laid out in boxes, with typed arrows between blocks and a Needed panel listing two missing capabilities" width="900" />
+  <img src="docs/canvas-dark.png" alt="StackForge in dark theme: a 21-technology SaaS stack laid out in boxes, with typed arrows between blocks and a Needed panel listing two missing capabilities" width="900" />
 </p>
 
 ---
@@ -183,7 +183,7 @@ Nothing to configure — there are no environment variables and no services to s
 | `pnpm build` | Type-check (`tsc -b`) and build to `dist/` |
 | `pnpm preview` | Serve the production build |
 | `pnpm check` | Rule engine, catalog, router, snapping, search, contrast and utility tests (`node --test`) |
-| `pnpm test:responsive` | Playwright: no horizontal scroll, overlapping panels or console errors at each test width |
+| `pnpm test:responsive` | Playwright: no horizontal scroll, overlapping panels or console errors at each test width. Needs `@playwright/test`, which is not in `package.json` yet |
 | `pnpm lint` | Biome: lint (complexity ≤ 10) and formatting check |
 | `pnpm format` | Biome: rewrite formatting |
 | `pnpm typecheck` | `tsc -b`, strict |
@@ -292,14 +292,28 @@ profile with an unknown value, an undated file, or no pros or cons.
 | ![TypeScript](https://img.shields.io/badge/TypeScript%206-3178C6?style=flat-square&logo=typescript&logoColor=white) | Types, and the test runner via `--experimental-strip-types` |
 | ![Vite](https://img.shields.io/badge/Vite%208-646CFF?style=flat-square&logo=vite&logoColor=white) | Dev server and build |
 | ![Tailwind](https://img.shields.io/badge/Tailwind%204-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white) | Styling on design tokens, via `@tailwindcss/vite` |
-| ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui%20%2B%20Radix-000000?style=flat-square&logo=shadcnui&logoColor=white) | Accessible primitives: popovers, selects, dialogs, tooltips |
-| ![Motion](https://img.shields.io/badge/Motion-FFF312?style=flat-square&logo=framer&logoColor=black) | Panel and drawer transitions |
+| ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui%20%2B%20Radix-000000?style=flat-square&logo=shadcnui&logoColor=white) | Accessible primitives: popovers, selects, alert dialogs, tooltips, scroll areas. Variants via `class-variance-authority` |
+| ![Motion](https://img.shields.io/badge/Motion-FFF312?style=flat-square&logo=framer&logoColor=black) | Panel, drawer and theme-toggle transitions, plus `tw-animate-css` for the Radix enter and exit states |
 | ![Zustand](https://img.shields.io/badge/Zustand%205-443E38?style=flat-square&logo=react&logoColor=white) | State and `localStorage` persistence |
 | ![React Flow](https://img.shields.io/badge/@xyflow/react%2012-FF0072?style=flat-square&logo=diagramsdotnet&logoColor=white) | Canvas, panning, minimap |
-| ![Biome](https://img.shields.io/badge/Biome-60A5FA?style=flat-square&logo=biome&logoColor=white) | Linting and formatting |
-| ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=flat-square&logo=pnpm&logoColor=white) | Package manager |
+| ![Lucide](https://img.shields.io/badge/Lucide-F56565?style=flat-square&logo=lucide&logoColor=white) | UI icons |
+| ![Simple Icons](https://img.shields.io/badge/Simple%20Icons-111111?style=flat-square&logo=simpleicons&logoColor=white) | Brand logos on the blocks, loaded from `cdn.simpleicons.org` |
+| ![Inter](https://img.shields.io/badge/Inter%20%2B%20Geist%20Mono-000000?style=flat-square&logo=googlefonts&logoColor=white) | Self-hosted variable fonts via Fontsource |
+| ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white) | Static hosting |
 
-No test framework — `node --test` and `assert` do the job.
+Class names merge through [`cn`](https://www.npmjs.com/package/cn), a compiled drop-in for
+clsx + tailwind-merge, extended in `src/lib/utils.ts` with the design scale's text sizes.
+
+**Tooling**
+
+| | |
+|---|---|
+| ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=flat-square&logo=pnpm&logoColor=white) | Package manager |
+| ![Node test runner](https://img.shields.io/badge/node%20--test-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white) | Unit tests with `node:test` and `assert`, no framework |
+| ![Biome](https://img.shields.io/badge/Biome-60A5FA?style=flat-square&logo=biome&logoColor=white) | Linting and formatting |
+| ![knip](https://img.shields.io/badge/knip%20%2B%20jscpd-555?style=flat-square) | Dead code and duplication gates |
+| ![Lefthook](https://img.shields.io/badge/Lefthook-FF1E1E?style=flat-square) | Git hooks: gitleaks, Biome, commitlint |
+| ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) | CI and CodeQL |
 
 ## Structure
 
