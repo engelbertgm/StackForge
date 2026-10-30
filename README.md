@@ -366,10 +366,10 @@ keep the test alongside the module it covers. See [CONTRIBUTING.md](CONTRIBUTING
 
 ## Credits
 
-Built by <a href="https://github.com/e-mdj7">e-mdj7</a>, co-authored with
+Built by <a href="https://github.com/engelbertgm">engelbertgm</a>, co-authored with
 <a href="https://claude.com/claude-code">Claude Code</a> — which paired on the rule engine,
 the orthogonal wire router in `src/routing.ts`, the catalog schema, and the explained search.
 
 ## License
 
-MIT — do what you want with it. See `LICENSE` for the exact text. — <a href="https://github.com/e-mdj7">e-mdj7</a>
+MIT — do what you want with it. See `LICENSE` for the exact text. — <a href="https://github.com/engelbertgm">engelbertgm</a>
