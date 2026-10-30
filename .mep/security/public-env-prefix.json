@@ -5,8 +5,8 @@
     ".env.example",
     "tests/responsive.spec.ts"
   ],
-  "notes": "Not applicable in practice: no import.meta.env / VITE_ / NEXT_PUBLIC_ / PUBLIC_ usage anywhere in src, config or html (grep). Only env access is process.env.BASE_URL in tests/responsive.spec.ts:5, Node-side test, never bundled. .env.example declares no variables. No prefixed SECRET/SERVICE_ROLE/PRIVATE/PASSWORD/TOKEN/WEBHOOK names.",
-  "hash": "b0c6ae52c65b6f79674a67634e2ed72139397224a40425be7122817eeb77cf5c",
+  "notes": "Re-audit at cadec49 (formatting-only change). grep for import.meta.env / VITE_ / NEXT_PUBLIC_ / PUBLIC_ across ts/tsx/js/mjs/json/html (excl node_modules, dist): no source usage. Only env access is process.env.BASE_URL at tests/responsive.spec.ts:5, Node-side test, never bundled. .env.example declares no variables.",
+  "hash": "fbb9f1ce9d9d383bd13bce3ee2dcdf248d6f3451f0cbccc69d57a277fdaf39df",
   "date": "2026-10-30",
   "by": "mep-security"
 }

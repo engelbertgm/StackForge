@@ -4,8 +4,8 @@
   "files": [
     ".github/workflows/codeql.yml"
   ],
-  "notes": "codeql.yml: CodeQL init+analyze for javascript-typescript on push to main, PRs and weekly cron; permissions security-events: write. Repo is public so checkout works without explicit contents: read (add contents: read + actions: read if the repo goes private). File is untracked; commit it to activate.",
-  "hash": "fa7ae9bdf7122c5d5574eec99cff9aadb432d95c0bbff8560b940c8d0658ff83",
+  "notes": "Re-audit at cadec49: diff vs audited version is only the cron quote style (line 8, now double quotes). codeql.yml runs CodeQL init+analyze (lines 17,20) for javascript-typescript on push to main, PRs and weekly cron, permissions security-events: write (line 14). Now committed. Repo is public; add contents: read + actions: read if it goes private.",
+  "hash": "ed63297fd8692d2ee2613dec6df541e52920a25547beb2053a14a21fdf3e2a22",
   "date": "2026-10-30",
   "by": "mep-security"
 }
