@@ -23,7 +23,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Secretos en el código y en todo el historial (fetch-depth: 0).
       # En cuentas de organización, gitleaks-action pide GITLEAKS_LICENSE (gratis en gitleaks.io).
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Falla con vulnerabilidades críticas en dependencias de producción.
