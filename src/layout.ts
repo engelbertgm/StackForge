@@ -61,11 +61,7 @@ function bestColumns(count: number, boxHeights: number[], canvasW: number, canva
  * Auto-arranges only the boxes and blocks that exist. Groups keep their declared
  * dataflow order left to right so arrows mostly run one way instead of tangling.
  */
-export function layout(
-  added: Tech[],
-  canvasW = 1600,
-  canvasH = 900,
-): { boxes: Box[]; placed: Placed[] } {
+export function layout(added: Tech[], canvasW = 1600, canvasH = 900): { boxes: Box[]; placed: Placed[] } {
   const byGroup = new Map<string, Tech[]>()
   for (const t of added) {
     const list = byGroup.get(t.group)
@@ -103,7 +99,12 @@ export function layout(
     return { group: g, sections, slots, h: y - GAP + PAD }
   })
 
-  const cols = bestColumns(measured.length, measured.map((m) => m.h), canvasW, canvasH)
+  const cols = bestColumns(
+    measured.length,
+    measured.map((m) => m.h),
+    canvasW,
+    canvasH,
+  )
 
   const boxes: Box[] = []
   const placed: Placed[] = []

@@ -11,24 +11,34 @@ for (const path of PAGES) {
     test(`${path} a ${width}px: sin scroll horizontal, elementos encimados ni errores de consola`, async ({ page }) => {
       // Ítem no-console-errors: any console.error or uncaught exception fails the page.
       const errors: string[] = []
-      page.on('console', msg => {
+      page.on('console', (msg) => {
         if (msg.type() === 'error') errors.push(msg.text())
       })
-      page.on('pageerror', err => errors.push(err.message))
+      page.on('pageerror', (err) => errors.push(err.message))
       await page.setViewportSize({ width, height: 900 })
       await page.goto(BASE_URL + path, { waitUntil: 'networkidle' })
 
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
       expect(overflow, 'scroll horizontal (px)').toBeLessThanOrEqual(0)
 
       // Interactive elements that overlap each other (and are not nested) hide one another.
       const overlaps = await page.evaluate(() => {
-        const visible = [...document.querySelectorAll('a, button, input, select, textarea, [role="button"]')].filter(el => {
-          const r = el.getBoundingClientRect()
-          const s = getComputedStyle(el)
-          return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.position !== 'fixed' && s.position !== 'sticky'
-        })
-        const boxes = visible.map(el => ({ el, r: el.getBoundingClientRect() }))
+        const visible = [...document.querySelectorAll('a, button, input, select, textarea, [role="button"]')].filter(
+          (el) => {
+            const r = el.getBoundingClientRect()
+            const s = getComputedStyle(el)
+            return (
+              r.width > 0 &&
+              r.height > 0 &&
+              s.visibility !== 'hidden' &&
+              s.position !== 'fixed' &&
+              s.position !== 'sticky'
+            )
+          },
+        )
+        const boxes = visible.map((el) => ({ el, r: el.getBoundingClientRect() }))
         const clash = (a: (typeof boxes)[number], b: (typeof boxes)[number]) => {
           if (a.el.contains(b.el) || b.el.contains(a.el)) return false
           const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left)
@@ -36,7 +46,10 @@ for (const path of PAGES) {
           return w > 2 && h > 2
         }
         const found = boxes.flatMap((a, i) =>
-          boxes.slice(i + 1).filter((b) => clash(a, b)).map((b) => `${a.el.outerHTML.slice(0, 60)} ↔ ${b.el.outerHTML.slice(0, 60)}`),
+          boxes
+            .slice(i + 1)
+            .filter((b) => clash(a, b))
+            .map((b) => `${a.el.outerHTML.slice(0, 60)} ↔ ${b.el.outerHTML.slice(0, 60)}`),
         )
         return found.slice(0, 5)
       })

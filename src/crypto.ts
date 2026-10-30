@@ -20,7 +20,11 @@ async function deriveKey(passphrase: string, salt: Uint8Array) {
 }
 
 const toB64 = (b: ArrayBuffer | Uint8Array) =>
-  btoa(String.fromCharCode(...new Uint8Array(b instanceof Uint8Array ? b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) : b)))
+  btoa(
+    String.fromCharCode(
+      ...new Uint8Array(b instanceof Uint8Array ? b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) : b),
+    ),
+  )
 
 const fromB64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
 

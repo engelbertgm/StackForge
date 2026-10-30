@@ -2,8 +2,17 @@
 /* order matters: tailwind first, then HeroUI's layer */
 @import "@heroui/styles";
 
-html, body, #root { height: 100%; margin: 0; background: #0b0d10; overflow: hidden; }
-body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #0b0d10;
+  overflow: hidden;
+}
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
 
 /* ---------- one radius identity ----------
    The UI had three shapes at once: HeroUI buttons are pills (rounded-3xl = 24px on an h-8
@@ -21,20 +30,41 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-se
   --radius-4xl: 10px;
   --field-radius: 10px;
 }
-.rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl { border-radius: 10px; }
+.rounded-md,
+.rounded-lg,
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl {
+  border-radius: 10px;
+}
 /* inline tags, count badges and colour swatches: same family, scaled for a ~14px-tall box.
    Every bare `rounded` in this codebase is one of those, so it belongs on this tier. */
-.rounded, .rounded-xs, .rounded-sm { border-radius: 6px; }
+.rounded,
+.rounded-xs,
+.rounded-sm {
+  border-radius: 6px;
+}
 
 /* HeroUI inlines its radius at build time via @apply, so the utility overrides above never
    reach these — they have to be named. This is the list of its components that ship a pill
    (rounded-3xl) or a 16px+ corner; everything else already follows --radius / --field-radius. */
-.button, .chip { border-radius: 10px; }
-.popover, .select__popover, .alert-dialog__dialog, .modal__dialog { border-radius: 10px; }
+.button,
+.chip {
+  border-radius: 10px;
+}
+.popover,
+.select__popover,
+.alert-dialog__dialog,
+.modal__dialog {
+  border-radius: 10px;
+}
 /* The one deliberate exception, and it is a rule of its own: an icon-only button is a circle.
    It reads as a circle at 20px whatever radius you give it, so say so — and it matches the
    round remove button already on every card. */
-.close-button, .select__clear-button { border-radius: 9999px; }
+.close-button,
+.select__clear-button {
+  border-radius: 9999px;
+}
 
 /* React Flow chrome, dark */
 .react-flow__controls {
@@ -42,11 +72,20 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-se
   overflow: hidden; /* so the first and last button inherit the group's corners */
 }
 .react-flow__controls-button {
-  background: #12151a; border-color: rgba(255,255,255,0.1); fill: rgba(255,255,255,0.6);
+  background: #12151a;
+  border-color: rgba(255, 255, 255, 0.1);
+  fill: rgba(255, 255, 255, 0.6);
 }
-.react-flow__controls-button:hover { background: #1b1f26; }
-.react-flow__minimap { border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; }
-.react-flow__node-group { pointer-events: all; }
+.react-flow__controls-button:hover {
+  background: #1b1f26;
+}
+.react-flow__minimap {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.react-flow__node-group {
+  pointer-events: all;
+}
 
 /* ---------- drag: the block stays, a ghost shows where it lands ----------
    React Flow discards the drag's position changes here — the flow is controlled (`nodes`
@@ -56,8 +95,14 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-se
    The wires are frozen for the length of the drag (App.tsx stops re-planning, which costs a
    full orthogonal search over every wire) and re-route once on release, so they fade back
    to say they are stale rather than looking broken. */
-.is-dragging .react-flow__edges { opacity: 0.18; transition: opacity 120ms ease-out; }
-.react-flow__node.dragging { z-index: 50 !important; cursor: grabbing; }
+.is-dragging .react-flow__edges {
+  opacity: 0.18;
+  transition: opacity 120ms ease-out;
+}
+.react-flow__node.dragging {
+  z-index: 50 !important;
+  cursor: grabbing;
+}
 /* The block left behind: dimmed but ringed, so it reads as the one in flight.
    !important is load-bearing here — TechNode and GroupNode both set `opacity` inline for
    their filter dimming, and an inline style beats a stylesheet rule without it. */
@@ -71,7 +116,9 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-se
 .react-flow__edges,
 .react-flow__edge,
 .react-flow__edge-path,
-.react-flow__edge-interaction { pointer-events: none !important; }
+.react-flow__edge-interaction {
+  pointer-events: none !important;
+}
 
 /* Faint technology-coloured glows behind the grid, so the canvas is not a flat void.
    Sits under React Flow's own layers, never over a card. */
@@ -103,5 +150,9 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-se
    Keep BOTH containers out of the stacking context so their children interleave by z-index,
    then pin the edge layer to 1 between the two node layers. */
 .react-flow__edges,
-.react-flow__nodes { z-index: auto !important; }
-.react-flow__edges svg:not(.react-flow__marker) { z-index: 1 !important; }
+.react-flow__nodes {
+  z-index: auto !important;
+}
+.react-flow__edges svg:not(.react-flow__marker) {
+  z-index: 1 !important;
+}

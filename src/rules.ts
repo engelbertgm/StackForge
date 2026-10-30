@@ -72,7 +72,8 @@ function push(acc: Acc, source: string, target: string, rel: Link['rel'], card?:
   acc.edges.push({ id, source, target, rel, card })
 }
 
-const addMissing = (acc: Acc, cap: string, ids: string[]) => acc.missing.set(cap, [...(acc.missing.get(cap) ?? []), ...ids])
+const addMissing = (acc: Acc, cap: string, ids: string[]) =>
+  acc.missing.set(cap, [...(acc.missing.get(cap) ?? []), ...ids])
 
 // explicit arrows, only when the other end is on the canvas. Like a need, a link may name a
 // capability: GitHub Actions runs whichever linter you picked, not one fixed product
@@ -123,7 +124,11 @@ function applyStackRule(acc: Acc, r: StackRule, selected: Tech[], caps: Set<stri
   if (!satisfied.length) {
     for (const t of blame) acc.problems.push({ techId: t.id, severity: r.severity, message: r.message })
     // one of `requires` would satisfy the rule — offer them all as candidates
-    addMissing(acc, r.requires[0], blame.map((t) => t.id))
+    addMissing(
+      acc,
+      r.requires[0],
+      blame.map((t) => t.id),
+    )
     return
   }
   // the rule describes a real dependency — now that both ends are present, draw it.

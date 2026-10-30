@@ -1,8 +1,19 @@
 export type Rel =
-  | 'extends' | 'tests' | 'styles' | 'types' | 'builds'
-  | 'requires' | 'consumes' | 'queries' | 'syncs'
-  | 'deploys' | 'hosts' | 'orchestrates'
-  | 'monitors' | 'tracks' | 'automates'
+  | 'extends'
+  | 'tests'
+  | 'styles'
+  | 'types'
+  | 'builds'
+  | 'requires'
+  | 'consumes'
+  | 'queries'
+  | 'syncs'
+  | 'deploys'
+  | 'hosts'
+  | 'orchestrates'
+  | 'monitors'
+  | 'tracks'
+  | 'automates'
   | 'conflicts'
 
 /**

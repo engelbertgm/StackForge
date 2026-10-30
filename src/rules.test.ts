@@ -5,7 +5,14 @@ import { analyze, blockedBy, fixesFor } from './rules.ts'
 import type { StackRule, Tech } from './types.ts'
 
 const t = (id: string, extra: Partial<Tech> = {}): Tech => ({
-  id, name: id, group: 'x', section: 'x', color: '#fff', langs: ['ts'], desc: '', ...extra,
+  id,
+  name: id,
+  group: 'x',
+  section: 'x',
+  color: '#fff',
+  langs: ['ts'],
+  desc: '',
+  ...extra,
 })
 
 const firebase = t('firebase', { provides: ['db', 'auth'], exclusive: ['baas'], conflicts: ['postgresql'] })
@@ -82,8 +89,11 @@ test('conflict drawn once, reported on both blocks', () => {
 
 test('a satisfied stack rule draws the dependency instead of complaining', () => {
   const rule: StackRule = {
-    id: 'rag-no-vector', when: ['rag'], requires: ['vector'],
-    severity: 'warn', message: 'RAG without a vector store',
+    id: 'rag-no-vector',
+    when: ['rag'],
+    requires: ['vector'],
+    severity: 'warn',
+    message: 'RAG without a vector store',
   }
   const langchain = t('langchain', { provides: ['rag'] })
   const pinecone = t('pinecone', { provides: ['vector'] })
@@ -99,8 +109,11 @@ test('a satisfied stack rule draws the dependency instead of complaining', () =>
 
 test('stack rule fires only when trigger present and requirement absent', () => {
   const rule: StackRule = {
-    id: 'users-need-auth', when: ['users'], requires: ['auth'],
-    severity: 'error', message: 'Users but no auth provider',
+    id: 'users-need-auth',
+    when: ['users'],
+    requires: ['auth'],
+    severity: 'error',
+    message: 'Users but no auth provider',
   }
   const app = t('app', { provides: ['users'] })
   assert.equal(analyze([app], [rule]).problems[0].message, 'Users but no auth provider')
@@ -122,9 +135,15 @@ test('fixes rank a focused tool in the stack language ahead of a framework or a 
   const sqlalchemy = t('sqlalchemy', { langs: ['py'], provides: ['orm'] })
   const drizzle = t('drizzle', { langs: ['ts'], provides: ['orm'] })
   const catalog = [django, sqlalchemy, drizzle]
-  assert.deepEqual(fixesFor('orm', [next], catalog).map((x) => x.id), ['drizzle', 'sqlalchemy', 'django'])
+  assert.deepEqual(
+    fixesFor('orm', [next], catalog).map((x) => x.id),
+    ['drizzle', 'sqlalchemy', 'django'],
+  )
 
   const langfuse = t('langfuse', { provides: ['monitoring'], needs: ['llm'] })
   const sentry = t('sentry', { provides: ['monitoring'] })
-  assert.deepEqual(fixesFor('monitoring', [next], [langfuse, sentry]).map((x) => x.id), ['sentry', 'langfuse'])
+  assert.deepEqual(
+    fixesFor('monitoring', [next], [langfuse, sentry]).map((x) => x.id),
+    ['sentry', 'langfuse'],
+  )
 })

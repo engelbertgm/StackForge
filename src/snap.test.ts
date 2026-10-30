@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { snap, type Box } from './snap.ts'
+import { type Box, snap } from './snap.ts'
 
 const card = (x: number, y: number): Box => ({ x, y, w: 168, h: 62 })
 

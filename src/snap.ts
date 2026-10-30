@@ -11,7 +11,12 @@
  * can be unit-tested without a DOM.
  */
 
-export interface Box { x: number; y: number; w: number; h: number }
+export interface Box {
+  x: number
+  y: number
+  w: number
+  h: number
+}
 
 export interface Guide {
   axis: 'x' | 'y'
@@ -39,8 +44,7 @@ const ON = 0.5
 function closest(mine: number[], peers: Box[], lines: (b: Box) => number[], tol: number) {
   let hit: { delta: number; at: number } | null = null
   const pairs = peers.flatMap((peer) => lines(peer).flatMap((at) => mine.map((own) => ({ delta: at - own, at }))))
-  for (const p of pairs)
-    if (Math.abs(p.delta) <= tol && (!hit || Math.abs(p.delta) < Math.abs(hit.delta))) hit = p
+  for (const p of pairs) if (Math.abs(p.delta) <= tol && (!hit || Math.abs(p.delta) < Math.abs(hit.delta))) hit = p
   return hit
 }
 

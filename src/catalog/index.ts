@@ -1,29 +1,40 @@
 import type { Build, Group, StackRule, Tech } from '../types'
-
-import groupsJson from './groups.json' with { type: 'json' }
-import rulesJson from './rules.json' with { type: 'json' }
-import buildsJson from './builds.json' with { type: 'json' }
-
-import language from './language.json' with { type: 'json' }
-import frontend from './frontend.json' with { type: 'json' }
-import mobile from './mobile.json' with { type: 'json' }
-import backend from './backend.json' with { type: 'json' }
-import auth from './auth.json' with { type: 'json' }
-import data from './data.json' with { type: 'json' }
 import ai from './ai.json' with { type: 'json' }
-import automation from './automation.json' with { type: 'json' }
-import testing from './testing.json' with { type: 'json' }
-import devops from './devops.json' with { type: 'json' }
-import observability from './observability.json' with { type: 'json' }
 import analytics from './analytics.json' with { type: 'json' }
-import design from './design.json' with { type: 'json' }
-import pm from './pm.json' with { type: 'json' }
+import auth from './auth.json' with { type: 'json' }
+import automation from './automation.json' with { type: 'json' }
+import backend from './backend.json' with { type: 'json' }
+import buildsJson from './builds.json' with { type: 'json' }
 import business from './business.json' with { type: 'json' }
+import data from './data.json' with { type: 'json' }
+import design from './design.json' with { type: 'json' }
+import devops from './devops.json' with { type: 'json' }
+import frontend from './frontend.json' with { type: 'json' }
+import groupsJson from './groups.json' with { type: 'json' }
+import language from './language.json' with { type: 'json' }
+import mobile from './mobile.json' with { type: 'json' }
+import observability from './observability.json' with { type: 'json' }
+import pm from './pm.json' with { type: 'json' }
+import rulesJson from './rules.json' with { type: 'json' }
+import testing from './testing.json' with { type: 'json' }
 
 /** Add a file here and to the imports above — nothing else needs to change. */
 const files = [
-  language, frontend, mobile, backend, auth, data, ai, automation,
-  testing, devops, observability, analytics, design, pm, business,
+  language,
+  frontend,
+  mobile,
+  backend,
+  auth,
+  data,
+  ai,
+  automation,
+  testing,
+  devops,
+  observability,
+  analytics,
+  design,
+  pm,
+  business,
 ]
 
 export const groups = groupsJson as Group[]
@@ -43,8 +54,7 @@ export const buildById = new Map(builds.map((b) => [b.id, b]))
 export function roleOf(build: Build, tech: Tech): string | null {
   const slot = `${tech.group}:${tech.section}`
   const box = `${tech.group}:*`
-  for (const [role, globs] of Object.entries(build.roles))
-    if (globs.includes(slot) || globs.includes(box)) return role
+  for (const [role, globs] of Object.entries(build.roles)) if (globs.includes(slot) || globs.includes(box)) return role
   return null
 }
 
@@ -56,7 +66,8 @@ export const allTags = [...new Set(techs.flatMap((t) => t.tags ?? []))].sort()
 const provided = new Set(techs.flatMap((t) => t.provides ?? []))
 const exists = (ref: string) => techById.has(ref) || provided.has(ref)
 
-const duplicateIds = () => techs.filter((t, i) => techs.findIndex((o) => o.id === t.id) !== i).map((t) => `duplicate id: ${t.id}`)
+const duplicateIds = () =>
+  techs.filter((t, i) => techs.findIndex((o) => o.id === t.id) !== i).map((t) => `duplicate id: ${t.id}`)
 
 /** Why `group:section` names no real slot, or null if it does. `*` stands for the whole box. */
 function badSlot(gid: string, section: string): string | null {
@@ -78,7 +89,9 @@ function techErrors(t: Tech): string[] {
 }
 
 const ruleErrors = (r: StackRule) =>
-  [...r.when, ...r.requires].filter((c) => !provided.has(c)).map((c) => `rule ${r.id}: capability "${c}" is never provided`)
+  [...r.when, ...r.requires]
+    .filter((c) => !provided.has(c))
+    .map((c) => `rule ${r.id}: capability "${c}" is never provided`)
 
 // a build glob pointing at a section that does not exist would silently light up nothing
 const buildErrors = (b: Build) =>
@@ -91,5 +104,10 @@ const buildErrors = (b: Build) =>
 
 /** Catalog integrity — run by catalog.test.ts and logged in dev. */
 export function validateCatalog(): string[] {
-  return [...duplicateIds(), ...techs.flatMap(techErrors), ...stackRules.flatMap(ruleErrors), ...builds.flatMap(buildErrors)]
+  return [
+    ...duplicateIds(),
+    ...techs.flatMap(techErrors),
+    ...stackRules.flatMap(ruleErrors),
+    ...builds.flatMap(buildErrors),
+  ]
 }
