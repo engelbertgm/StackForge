@@ -33,7 +33,7 @@
 
   { "id": "electron", "name": "Electron", "group": "mobile", "section": "Desktop", "icon": "electron", "color": "#47848f", "langs": ["ts", "js"],
     "desc": "Chromium plus Node in a desktop window. Use when you need full web compatibility and can afford a 100MB download.",
-    "provides": ["desktop"], "exclusive": ["desktop-shell"], "tags": ["desktop"] },
+    "provides": ["desktop"], "exclusive": ["desktop-shell"], "links": [{ "to": "ui", "rel": "hosts" }], "tags": ["desktop"] },
 
   { "id": "tauri", "name": "Tauri", "group": "mobile", "section": "Desktop", "icon": "tauri", "color": "#ffc131", "langs": ["rust", "ts"],
     "desc": "Rust backend with the system webview, a few MB per binary. Use when Electron is too heavy.",

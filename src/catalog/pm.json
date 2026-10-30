@@ -42,6 +42,16 @@
     ],
     "tags": [
       "pm"
+    ],
+    "links": [
+      {
+        "to": "github",
+        "rel": "syncs"
+      },
+      {
+        "to": "chat",
+        "rel": "syncs"
+      }
     ]
   },
   {
@@ -63,6 +73,12 @@
     ],
     "tags": [
       "pm"
+    ],
+    "links": [
+      {
+        "to": "chat",
+        "rel": "syncs"
+      }
     ]
   },
   {
@@ -84,6 +100,12 @@
     ],
     "tags": [
       "pm"
+    ],
+    "links": [
+      {
+        "to": "chat",
+        "rel": "syncs"
+      }
     ]
   },
   {
@@ -133,6 +155,12 @@
     "tags": [
       "pm",
       "atlassian"
+    ],
+    "links": [
+      {
+        "to": "chat",
+        "rel": "syncs"
+      }
     ]
   },
   {
@@ -247,6 +275,12 @@
     ],
     "tags": [
       "pm"
+    ],
+    "links": [
+      {
+        "to": "python",
+        "rel": "extends"
+      }
     ]
   },
   {
@@ -326,6 +360,12 @@
     "desc": "Quick screen recordings with a talking head. Use to replace a meeting that could have been a video.",
     "tags": [
       "pm"
+    ],
+    "links": [
+      {
+        "to": "chat",
+        "rel": "syncs"
+      }
     ]
   },
   {

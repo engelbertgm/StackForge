@@ -115,6 +115,16 @@ function checkConflicts(acc: Acc, t: Tech, selected: Tech[]) {
   }
 }
 
+/** One line per (tech the rule is about, tech that satisfies it), pointing the way `wire.from` says. */
+function drawRuleWire(acc: Acc, wire: NonNullable<StackRule['wire']>, providers: Tech[], blame: Tech[]) {
+  const card = wire.rel === 'requires' ? 'n-1' : undefined
+  const pairs = providers.flatMap((p) => blame.filter((t) => t.id !== p.id).map((t) => [t, p] as const))
+  for (const [t, p] of pairs) {
+    if (wire.from === 'needer') push(acc, t.id, p.id, wire.rel, card)
+    else push(acc, p.id, t.id, wire.rel)
+  }
+}
+
 // stack-wide completeness (self-hosted with no DB, users with no auth, RAG with no vector store, ...)
 function applyStackRule(acc: Acc, r: StackRule, selected: Tech[], caps: Set<string>) {
   if (!r.when.every((c) => caps.has(c))) return
@@ -131,11 +141,11 @@ function applyStackRule(acc: Acc, r: StackRule, selected: Tech[], caps: Set<stri
     )
     return
   }
-  // the rule describes a real dependency — now that both ends are present, draw it.
+  // satisfied: draw the relationship the rule stands for, if it stands for one (see StackRule.wire).
   // This is why adding Pinecone finally wires LangChain to it.
+  if (!r.wire) return
   const providers = satisfied.flatMap((cap) => selected.filter((o) => o.provides?.includes(cap)))
-  for (const provider of providers)
-    for (const t of blame) if (t.id !== provider.id) push(acc, t.id, provider.id, 'requires', 'n-1')
+  drawRuleWire(acc, r.wire, providers, blame)
 }
 
 export function analyze(selected: Tech[], stackRules: StackRule[]): Analysis {

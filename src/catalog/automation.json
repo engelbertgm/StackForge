@@ -43,7 +43,7 @@
 
   { "id": "spark", "name": "Apache Spark", "group": "automation", "section": "Data pipelines", "icon": "apachespark", "color": "#e25a1c", "langs": ["py", "sql"],
     "desc": "Distributed processing for very large datasets. Use when the data no longer fits on one machine.",
-    "provides": ["etl"], "tags": ["data"] },
+    "provides": ["etl"], "links": [{ "to": "warehouse", "rel": "syncs" }], "tags": ["data"] },
 
   { "id": "kafka", "name": "Apache Kafka", "group": "automation", "section": "Messaging & Events", "icon": "apachekafka", "color": "#ffffff", "langs": ["java"],
     "desc": "Durable partitioned event log that many consumers replay. Use as the backbone of event-driven architectures.",
@@ -51,7 +51,7 @@
 
   { "id": "rabbitmq", "name": "RabbitMQ", "group": "automation", "section": "Messaging & Events", "icon": "rabbitmq", "color": "#ff6600", "langs": ["erlang"],
     "desc": "Classic message broker with rich routing. Use for task distribution when Kafka is more than you need.",
-    "provides": ["queue"], "exclusive": ["broker"], "tags": ["oss"] },
+    "provides": ["queue"], "exclusive": ["broker"], "links": [{ "to": "api", "rel": "syncs" }], "tags": ["oss"] },
 
   { "id": "nats", "name": "NATS", "group": "automation", "section": "Messaging & Events", "icon": "natsdotio", "color": "#27aae1", "langs": ["go"],
     "desc": "Very light pub/sub and streaming with tiny operational overhead. Use for microservice chatter and IoT fleets.",

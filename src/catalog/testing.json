@@ -382,6 +382,12 @@
     ],
     "tags": [
       "backend"
+    ],
+    "links": [
+      {
+        "to": "api",
+        "rel": "tests"
+      }
     ]
   },
   {
@@ -400,6 +406,12 @@
     ],
     "tags": [
       "backend"
+    ],
+    "links": [
+      {
+        "to": "api",
+        "rel": "tests"
+      }
     ]
   },
   {

@@ -92,6 +92,14 @@ export interface StackRule {
   requires: string[]
   severity: 'error' | 'warn'
   message: string
+  /**
+   * Once both ends are on the canvas, the line this rule stands for — and only if it stands
+   * for one. A RAG pipeline really queries its vector store; a web app does not "require"
+   * its test runner, it is tested by it. Recommendations with no real relationship leave this
+   * out and stay a warning only. `from` says which end the arrow leaves: the techs the rule is
+   * about (`needer`) or the ones that satisfy it (`provider`).
+   */
+  wire?: { rel: Rel; from: 'needer' | 'provider' }
 }
 
 export interface Creds {

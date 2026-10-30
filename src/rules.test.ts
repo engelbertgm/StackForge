@@ -94,6 +94,7 @@ test('a satisfied stack rule draws the dependency instead of complaining', () =>
     requires: ['vector'],
     severity: 'warn',
     message: 'RAG without a vector store',
+    wire: { rel: 'queries', from: 'needer' },
   }
   const langchain = t('langchain', { provides: ['rag'] })
   const pinecone = t('pinecone', { provides: ['vector'] })
@@ -104,7 +105,23 @@ test('a satisfied stack rule draws the dependency instead of complaining', () =>
   // together the complaint becomes an arrow
   const both = analyze([langchain, pinecone], [rule])
   assert.deepEqual(both.problems, [])
-  assert.ok(both.edges.some((e) => e.source === 'langchain' && e.target === 'pinecone' && e.rel === 'requires'))
+  assert.ok(both.edges.some((e) => e.source === 'langchain' && e.target === 'pinecone' && e.rel === 'queries'))
+})
+
+test('a recommendation rule is silenced when satisfied but draws no line', () => {
+  // a web app is tested by its runner; it does not "require" it, so no arrow is invented
+  const rule: StackRule = {
+    id: 'api-no-tests',
+    when: ['api'],
+    requires: ['test-unit'],
+    severity: 'warn',
+    message: 'No tests',
+  }
+  const api = t('fastapi', { provides: ['api'] })
+  const runner = t('pytest', { provides: ['test-unit'] })
+  const a = analyze([api, runner], [rule])
+  assert.deepEqual(a.problems, [])
+  assert.deepEqual(a.edges, [])
 })
 
 test('stack rule fires only when trigger present and requirement absent', () => {

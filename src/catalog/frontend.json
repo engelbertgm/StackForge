@@ -20,7 +20,17 @@
     "tags": [
       "web"
     ],
-    "url": "https://vite.dev"
+    "url": "https://vite.dev",
+    "links": [
+      {
+        "to": "esbuild",
+        "rel": "extends"
+      },
+      {
+        "to": "rollup",
+        "rel": "extends"
+      }
+    ]
   },
   {
     "id": "webpack",
@@ -301,6 +311,12 @@
     "desc": "HTML attributes that swap server-rendered fragments. Use when the backend already renders HTML and you want interactivity without a SPA.",
     "tags": [
       "web"
+    ],
+    "links": [
+      {
+        "to": "api",
+        "rel": "consumes"
+      }
     ]
   },
   {
@@ -882,6 +898,12 @@
     ],
     "tags": [
       "web"
+    ],
+    "links": [
+      {
+        "to": "ui",
+        "rel": "extends"
+      }
     ]
   },
   {
@@ -902,6 +924,12 @@
     ],
     "tags": [
       "web"
+    ],
+    "links": [
+      {
+        "to": "react",
+        "rel": "extends"
+      }
     ]
   },
   {
@@ -922,6 +950,12 @@
     ],
     "tags": [
       "web"
+    ],
+    "links": [
+      {
+        "to": "react",
+        "rel": "extends"
+      }
     ]
   },
   {
@@ -943,6 +977,12 @@
     ],
     "tags": [
       "web"
+    ],
+    "links": [
+      {
+        "to": "ui",
+        "rel": "extends"
+      }
     ]
   },
   {
@@ -990,6 +1030,16 @@
     ],
     "tags": [
       "web"
+    ],
+    "links": [
+      {
+        "to": "ui",
+        "rel": "extends"
+      },
+      {
+        "to": "api",
+        "rel": "consumes"
+      }
     ]
   },
   {
@@ -1011,6 +1061,16 @@
     ],
     "tags": [
       "web"
+    ],
+    "links": [
+      {
+        "to": "react",
+        "rel": "extends"
+      },
+      {
+        "to": "api",
+        "rel": "consumes"
+      }
     ]
   },
   {
@@ -1136,6 +1196,12 @@
     ],
     "tags": [
       "web"
+    ],
+    "links": [
+      {
+        "to": "react",
+        "rel": "extends"
+      }
     ]
   },
   {

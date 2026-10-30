@@ -1,19 +1,19 @@
 [
   { "id": "posthog", "name": "PostHog", "group": "analytics", "section": "Product analytics", "icon": "posthog", "color": "#f54e00", "langs": ["ts"],
     "desc": "Funnels, session replay, feature flags and experiments in one tool, self-hostable. Use when you want product analytics without wiring four vendors.",
-    "provides": ["analytics", "flags"], "exclusive": ["product-analytics"], "tags": ["oss"], "url": "https://app.posthog.com" },
+    "provides": ["analytics", "flags"], "exclusive": ["product-analytics"], "links": [{ "to": "ui", "rel": "tracks" }], "tags": ["oss"], "url": "https://app.posthog.com" },
 
   { "id": "mixpanel", "name": "Mixpanel", "group": "analytics", "section": "Product analytics", "icon": "mixpanel", "color": "#7856ff", "langs": ["ts"],
     "desc": "Event analytics with cohorts and retention reports. Use when product managers live inside funnel analysis.",
-    "provides": ["analytics"], "exclusive": ["product-analytics"], "tags": ["saas"] },
+    "provides": ["analytics"], "exclusive": ["product-analytics"], "links": [{ "to": "ui", "rel": "tracks" }], "tags": ["saas"] },
 
   { "id": "amplitude", "name": "Amplitude", "group": "analytics", "section": "Product analytics", "color": "#1e61f0", "langs": ["ts"],
     "desc": "Behavioural analytics with strong cohort and journey tooling. Use for large consumer products with dedicated analysts.",
-    "provides": ["analytics"], "exclusive": ["product-analytics"], "tags": ["saas"] },
+    "provides": ["analytics"], "exclusive": ["product-analytics"], "links": [{ "to": "ui", "rel": "tracks" }], "tags": ["saas"] },
 
   { "id": "googleanalytics", "name": "Google Analytics", "group": "analytics", "section": "Web analytics", "icon": "googleanalytics", "color": "#e37400", "langs": ["js"],
     "desc": "Free traffic analytics tied to Google Ads. Use when marketing needs attribution and campaign reporting.",
-    "provides": ["analytics"], "exclusive": ["web-analytics"], "tags": ["google", "saas"] },
+    "provides": ["analytics"], "exclusive": ["web-analytics"], "links": [{ "to": "ui", "rel": "tracks" }], "tags": ["google", "saas"] },
 
   { "id": "plausible", "name": "Plausible", "group": "analytics", "section": "Web analytics", "icon": "plausibleanalytics", "color": "#5850ec", "langs": ["elixir"],
     "desc": "Cookie-free lightweight analytics, self-hostable. Use when you want visitor numbers without a consent banner.",
@@ -53,19 +53,19 @@
 
   { "id": "chartjs", "name": "Chart.js", "group": "analytics", "section": "Charting libraries", "icon": "chartdotjs", "color": "#ff6384", "langs": ["js"],
     "desc": "Canvas charts with almost no setup. Use for a handful of charts on a plain page.",
-    "provides": ["charts"], "exclusive": ["charts"], "tags": ["web"] },
+    "provides": ["charts"], "exclusive": ["charts"], "links": [{ "to": "ui", "rel": "extends" }], "tags": ["web"] },
 
   { "id": "d3", "name": "D3.js", "group": "analytics", "section": "Charting libraries", "color": "#f9a03c", "langs": ["js"],
     "desc": "Low-level data-driven DOM manipulation. Use when the visualisation does not exist in any chart library.",
-    "provides": ["charts"], "tags": ["web"] },
+    "provides": ["charts"], "links": [{ "to": "ui", "rel": "extends" }], "tags": ["web"] },
 
   { "id": "echarts", "name": "Apache ECharts", "group": "analytics", "section": "Charting libraries", "icon": "apacheecharts", "color": "#aa344d", "langs": ["js"],
     "desc": "Large chart catalogue that stays fast with huge datasets. Use for dense analytical dashboards.",
-    "provides": ["charts"], "exclusive": ["charts"], "tags": ["web"] },
+    "provides": ["charts"], "exclusive": ["charts"], "links": [{ "to": "ui", "rel": "extends" }], "tags": ["web"] },
 
   { "id": "plotly", "name": "Plotly", "group": "analytics", "section": "Charting libraries", "icon": "plotly", "color": "#3f4f75", "langs": ["py", "js"],
     "desc": "Interactive scientific charts with a Python API. Use in notebooks and data apps.",
-    "provides": ["charts"], "exclusive": ["charts"], "tags": ["data"] },
+    "provides": ["charts"], "exclusive": ["charts"], "links": [{ "to": "ui", "rel": "extends" }], "tags": ["data"] },
 
   { "id": "visx", "name": "visx", "group": "analytics", "section": "Charting libraries", "icon": "airbnb", "color": "#ff5a5f", "langs": ["ts"],
     "desc": "D3 primitives as React components, no chart opinions. Use when the design is bespoke but you want React rendering.",

@@ -17,7 +17,7 @@
 
   { "id": "poetry", "name": "Poetry", "group": "devops", "section": "Package managers", "icon": "poetry", "color": "#60a5fa", "langs": ["py"],
     "desc": "Dependency resolution and packaging for Python with a lockfile. Use in projects that already depend on it.",
-    "provides": ["pkg"], "exclusive": ["py-pkg"], "tags": ["backend"] },
+    "provides": ["pkg"], "exclusive": ["py-pkg"], "links": [{ "to": "python", "rel": "extends" }], "tags": ["backend"] },
 
   { "id": "docker", "name": "Docker", "group": "devops", "section": "Containers", "icon": "docker", "color": "#2496ed", "langs": ["yaml"],
     "desc": "Packages an app with its dependencies so it runs the same everywhere. Use when the app needs more than one process or a specific system library.",
@@ -139,7 +139,7 @@
 
   { "id": "fastly", "name": "Fastly", "group": "devops", "section": "Edge & CDN", "icon": "fastly", "color": "#ff282d", "langs": ["none"],
     "desc": "Programmable CDN with instant purge. Use for high-traffic media sites needing precise cache control.",
-    "provides": ["cdn", "edge"], "tags": ["cloud", "edge"] },
+    "provides": ["cdn", "edge"], "links": [{ "to": "ui", "rel": "hosts" }], "tags": ["cloud", "edge"] },
 
   { "id": "nginx", "name": "NGINX", "group": "devops", "section": "Edge & CDN", "icon": "nginx", "color": "#009639", "langs": ["none"],
     "desc": "Reverse proxy, TLS termination and static file serving. Use in front of self-hosted apps.",
@@ -151,11 +151,11 @@
 
   { "id": "vault", "name": "HashiCorp Vault", "group": "devops", "section": "Secrets", "icon": "vault", "color": "#ffec6e", "langs": ["none"],
     "desc": "Secret storage with dynamic credentials and audit logs. Use when secrets must rotate and every read is recorded.",
-    "provides": ["secrets"], "exclusive": ["secrets"], "tags": ["infra", "enterprise"] },
+    "provides": ["secrets"], "exclusive": ["secrets"], "links": [{ "to": "hosting", "rel": "syncs" }], "tags": ["infra", "enterprise"] },
 
   { "id": "doppler", "name": "Doppler", "group": "devops", "section": "Secrets", "color": "#3b82f6", "langs": ["none"],
     "desc": "Syncs environment variables across environments and platforms. Use to stop passing .env files around in chat.",
-    "provides": ["secrets"], "exclusive": ["secrets"], "tags": ["infra"] },
+    "provides": ["secrets"], "exclusive": ["secrets"], "links": [{ "to": "hosting", "rel": "syncs" }], "tags": ["infra"] },
 
   { "id": "infisical", "name": "Infisical", "group": "devops", "section": "Secrets", "color": "#ebebeb", "langs": ["none"],
     "desc": "Open-source secret management you can self-host. Use when secrets cannot sit with a third party.",

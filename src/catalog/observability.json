@@ -202,12 +202,15 @@
       "tracing",
       "self-hosted"
     ],
-    "needs": [
-      "tracing"
-    ],
     "tags": [
       "infra",
       "oss"
+    ],
+    "links": [
+      {
+        "to": "opentelemetry",
+        "rel": "consumes"
+      }
     ]
   },
   {
@@ -245,6 +248,12 @@
     ],
     "tags": [
       "cloud"
+    ],
+    "links": [
+      {
+        "to": "hosting",
+        "rel": "monitors"
+      }
     ]
   },
   {

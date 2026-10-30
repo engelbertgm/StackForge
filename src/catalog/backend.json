@@ -63,7 +63,7 @@
 
   { "id": "openapi", "name": "OpenAPI / Swagger", "group": "backend", "section": "API layer", "icon": "swagger", "color": "#85ea2d", "langs": ["yaml"],
     "desc": "Describes a REST API so docs, clients and mocks can be generated. Use when external teams consume your API.",
-    "provides": ["api-docs"], "tags": ["backend"] },
+    "provides": ["api-docs"], "links": [{ "to": "api", "rel": "types" }], "tags": ["backend"] },
 
   { "id": "grpc", "name": "gRPC", "group": "backend", "section": "API layer", "icon": "trpc", "color": "#244c5a", "langs": ["proto"],
     "desc": "Binary RPC over HTTP/2 with generated clients. Use for chatty internal service-to-service traffic.",
@@ -137,11 +137,11 @@
 
   { "id": "pusher", "name": "Pusher", "group": "backend", "section": "Realtime", "icon": "pusher", "color": "#300d4f", "langs": ["ts"],
     "desc": "Hosted pub/sub channels over WebSockets. Use when you want realtime without operating socket servers.",
-    "provides": ["realtime"], "tags": ["cloud"], "url": "https://dashboard.pusher.com" },
+    "provides": ["realtime"], "links": [{ "to": "ui", "rel": "syncs" }], "tags": ["cloud"], "url": "https://dashboard.pusher.com" },
 
   { "id": "ably", "name": "Ably", "group": "backend", "section": "Realtime", "color": "#ff5416", "langs": ["ts"],
     "desc": "Realtime messaging with guaranteed ordering and delivery. Use when dropped events would be a correctness bug.",
-    "provides": ["realtime"], "tags": ["cloud"] },
+    "provides": ["realtime"], "links": [{ "to": "ui", "rel": "syncs" }], "tags": ["cloud"] },
 
   { "id": "liveblocks", "name": "Liveblocks", "group": "backend", "section": "Realtime", "color": "#ffffff", "langs": ["ts"],
     "desc": "Presence, comments and conflict-free collaborative state. Use to add multiplayer to an editor or canvas.",

@@ -25,11 +25,11 @@
 
   { "id": "lucide", "name": "Lucide", "group": "design", "section": "Icons & Assets", "icon": "lucide", "color": "#f56565", "langs": ["ts"],
     "desc": "Clean consistent open-source icon set with tree-shaking. Use as the default icon library for new projects.",
-    "provides": ["icons"], "exclusive": ["icons"], "tags": ["design"] },
+    "provides": ["icons"], "exclusive": ["icons"], "links": [{ "to": "ui", "rel": "styles" }], "tags": ["design"] },
 
   { "id": "simpleicons", "name": "Simple Icons", "group": "design", "section": "Icons & Assets", "icon": "simpleicons", "color": "#111111", "langs": ["none"],
     "desc": "Brand logos with official colours as SVG. Use for tech stack diagrams and integration pages, exactly like this app does.",
-    "provides": ["icons"], "tags": ["design", "oss"], "url": "https://simpleicons.org" },
+    "provides": ["icons"], "links": [{ "to": "ui", "rel": "styles" }], "tags": ["design", "oss"], "url": "https://simpleicons.org" },
 
   { "id": "heroicons", "name": "Heroicons", "group": "design", "section": "Icons & Assets", "color": "#8b5cf6", "langs": ["ts"],
     "desc": "Icon set from the Tailwind team in outline and solid. Use when the project already uses Tailwind.",
@@ -37,11 +37,11 @@
 
   { "id": "fontawesome", "name": "Font Awesome", "group": "design", "section": "Icons & Assets", "icon": "fontawesome", "color": "#538dd7", "langs": ["css"],
     "desc": "Enormous icon catalogue covering brands and oddities. Use when you need one obscure glyph nobody else draws.",
-    "provides": ["icons"], "exclusive": ["icons"], "tags": ["design"] },
+    "provides": ["icons"], "exclusive": ["icons"], "links": [{ "to": "ui", "rel": "styles" }], "tags": ["design"] },
 
   { "id": "googlefonts", "name": "Google Fonts", "group": "design", "section": "Icons & Assets", "icon": "googlefonts", "color": "#4285f4", "langs": ["css"],
     "desc": "Free web fonts with easy self-hosting. Use unless brand guidelines demand a licensed typeface.",
-    "provides": ["fonts"], "tags": ["design"] },
+    "provides": ["fonts"], "links": [{ "to": "ui", "rel": "styles" }], "tags": ["design"] },
 
   { "id": "framermotion", "name": "Motion", "group": "design", "section": "Animation", "icon": "framer", "color": "#0055ff", "langs": ["ts"],
     "desc": "Declarative animation and gestures for React, including layout transitions. Use for polished UI motion without keyframes.",
@@ -49,9 +49,9 @@
 
   { "id": "gsap", "name": "GSAP", "group": "design", "section": "Animation", "icon": "greensock", "color": "#88ce02", "langs": ["js"],
     "desc": "Timeline-based animation with precise sequencing and scroll triggers. Use for marketing sites with choreographed motion.",
-    "provides": ["animation"], "exclusive": ["animation"], "tags": ["web", "design"] },
+    "provides": ["animation"], "exclusive": ["animation"], "links": [{ "to": "ui", "rel": "extends" }], "tags": ["web", "design"] },
 
   { "id": "lottie", "name": "Lottie", "group": "design", "section": "Animation", "icon": "lottiefiles", "color": "#00ddb3", "langs": ["json"],
     "desc": "Plays After Effects animations as vector JSON. Use when a motion designer hands you the animation.",
-    "provides": ["animation"], "tags": ["design", "mobile"] }
+    "provides": ["animation"], "links": [{ "to": "ui", "rel": "extends" }], "tags": ["design", "mobile"] }
 ]

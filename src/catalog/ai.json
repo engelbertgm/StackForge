@@ -321,6 +321,12 @@
     "tags": [
       "ai",
       "protocol"
+    ],
+    "links": [
+      {
+        "to": "llm",
+        "rel": "syncs"
+      }
     ]
   },
   {
@@ -548,6 +554,12 @@
     "tags": [
       "ai",
       "ml"
+    ],
+    "links": [
+      {
+        "to": "llm",
+        "rel": "tracks"
+      }
     ]
   }
 ]
