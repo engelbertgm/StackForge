@@ -3,15 +3,13 @@ import type { Tech } from './types'
 
 export const NODE_W = 168
 export const NODE_H = 62
-export const GAP = 14
-export const COLS = 2
+const GAP = 14
+const COLS = 2
 export const PAD = 22
 export const GROUP_HEADER = 38
-export const SECTION_HEADER = 24
-export const GROUP_W = COLS * NODE_W + (COLS - 1) * GAP + PAD * 2
-export const GROUP_GAP = 64
-/** group boxes per canvas row */
-export const ROW_LEN = 5
+const SECTION_HEADER = 24
+const GROUP_W = COLS * NODE_W + (COLS - 1) * GAP + PAD * 2
+const GROUP_GAP = 64
 
 export interface Box {
   groupId: string

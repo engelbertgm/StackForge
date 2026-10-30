@@ -24,7 +24,7 @@ const pair = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`)
  * Does `t` meet this need? A need names a capability, or a tech id when only that one product
  * will do: Supabase Edge Functions need Supabase itself, not any database.
  */
-export const supplies = (t: Tech, need: string) => t.id === need || !!t.provides?.includes(need)
+const supplies = (t: Tech, need: string) => t.id === need || !!t.provides?.includes(need)
 
 /**
  * What would fill a gap, best first. Cheapest is a single-purpose tool, in a language the stack
@@ -56,86 +56,99 @@ export function blockedBy(candidate: Tech, selected: Tech[]): string | null {
   return null
 }
 
-export function analyze(selected: Tech[], stackRules: StackRule[]): Analysis {
-  const caps = new Set<string>()
-  for (const t of selected) t.provides?.forEach((c) => caps.add(c))
+/** What analyze() accumulates while it walks the selection. */
+interface Acc {
+  problems: Problem[]
+  edges: Analysis['edges']
+  seenEdge: Set<string>
+  seenConflict: Set<string>
+  missing: Map<string, string[]>
+}
 
-  const problems: Problem[] = []
-  const edges: Analysis['edges'] = []
-  const seenEdge = new Set<string>()
-  const seenConflict = new Set<string>()
-  const missing = new Map<string, string[]>()
+function push(acc: Acc, source: string, target: string, rel: Link['rel'], card?: Link['card']) {
+  const id = `${source}->${target}:${rel}`
+  if (acc.seenEdge.has(id)) return
+  acc.seenEdge.add(id)
+  acc.edges.push({ id, source, target, rel, card })
+}
 
-  const push = (source: string, target: string, rel: Link['rel'], card?: Link['card']) => {
-    const id = `${source}->${target}:${rel}`
-    if (seenEdge.has(id)) return
-    seenEdge.add(id)
-    edges.push({ id, source, target, rel, card })
+const addMissing = (acc: Acc, cap: string, ids: string[]) => acc.missing.set(cap, [...(acc.missing.get(cap) ?? []), ...ids])
+
+// explicit arrows, only when the other end is on the canvas. Like a need, a link may name a
+// capability: GitHub Actions runs whichever linter you picked, not one fixed product
+function drawLinks(acc: Acc, t: Tech, selected: Tech[]) {
+  for (const l of t.links ?? [])
+    for (const o of selected) if (o.id !== t.id && supplies(o, l.to)) push(acc, t.id, o.id, l.rel, l.card)
+}
+
+// A need is a real dependency: draw it to every provider, because that is the
+// relationship the user is trying to see. Many needers, one provider -> n-1.
+function checkNeeds(acc: Acc, t: Tech, selected: Tech[]) {
+  for (const need of t.needs ?? []) {
+    const providers = selected.filter((o) => o.id !== t.id && supplies(o, need))
+    for (const p of providers) push(acc, t.id, p.id, 'requires', 'n-1')
+    if (providers.length) continue
+    acc.problems.push({ techId: t.id, severity: 'error', message: `Missing: nothing in this stack provides "${need}"` })
+    addMissing(acc, need, [t.id])
   }
+}
+
+// incompatibilities, reported on both blocks but drawn once
+function checkConflicts(acc: Acc, t: Tech, selected: Tech[]) {
+  for (const other of selected) {
+    if (other.id === t.id) continue
+    const explicit = t.conflicts?.includes(other.id)
+    const clash = t.exclusive?.find((k) => other.exclusive?.includes(k))
+    if (!explicit && !clash) continue
+    acc.problems.push({
+      techId: t.id,
+      severity: 'error',
+      message: explicit
+        ? `${t.name} is not compatible with ${other.name}`
+        : `${t.name} and ${other.name} both fill the "${clash}" slot`,
+    })
+    const key = pair(t.id, other.id)
+    if (acc.seenConflict.has(key)) continue
+    acc.seenConflict.add(key)
+    push(acc, t.id, other.id, 'conflicts')
+  }
+}
+
+// stack-wide completeness (self-hosted with no DB, users with no auth, RAG with no vector store, ...)
+function applyStackRule(acc: Acc, r: StackRule, selected: Tech[], caps: Set<string>) {
+  if (!r.when.every((c) => caps.has(c))) return
+  const blame = selected.filter((t) => t.provides?.some((c) => r.when.includes(c)))
+  const satisfied = r.requires.filter((c) => caps.has(c))
+
+  if (!satisfied.length) {
+    for (const t of blame) acc.problems.push({ techId: t.id, severity: r.severity, message: r.message })
+    // one of `requires` would satisfy the rule — offer them all as candidates
+    addMissing(acc, r.requires[0], blame.map((t) => t.id))
+    return
+  }
+  // the rule describes a real dependency — now that both ends are present, draw it.
+  // This is why adding Pinecone finally wires LangChain to it.
+  const providers = satisfied.flatMap((cap) => selected.filter((o) => o.provides?.includes(cap)))
+  for (const provider of providers)
+    for (const t of blame) if (t.id !== provider.id) push(acc, t.id, provider.id, 'requires', 'n-1')
+}
+
+export function analyze(selected: Tech[], stackRules: StackRule[]): Analysis {
+  const caps = new Set(selected.flatMap((t) => t.provides ?? []))
+  const acc: Acc = { problems: [], edges: [], seenEdge: new Set(), seenConflict: new Set(), missing: new Map() }
 
   for (const t of selected) {
-    // explicit arrows, only when the other end is on the canvas. Like a need, a link may name a
-    // capability: GitHub Actions runs whichever linter you picked, not one fixed product
-    for (const l of t.links ?? [])
-      for (const o of selected) if (o.id !== t.id && supplies(o, l.to)) push(t.id, o.id, l.rel, l.card)
-
-    // A need is a real dependency: draw it to every provider, because that is the
-    // relationship the user is trying to see. Many needers, one provider -> n-1.
-    for (const need of t.needs ?? []) {
-      const providers = selected.filter((o) => o.id !== t.id && supplies(o, need))
-      for (const p of providers) push(t.id, p.id, 'requires', 'n-1')
-      if (!providers.length) {
-        problems.push({ techId: t.id, severity: 'error', message: `Missing: nothing in this stack provides "${need}"` })
-        missing.set(need, [...(missing.get(need) ?? []), t.id])
-      }
-    }
-
-    // incompatibilities, reported on both blocks but drawn once
-    for (const other of selected) {
-      if (other.id === t.id) continue
-      const explicit = t.conflicts?.includes(other.id)
-      const clash = t.exclusive?.find((k) => other.exclusive?.includes(k))
-      if (!explicit && !clash) continue
-      problems.push({
-        techId: t.id,
-        severity: 'error',
-        message: explicit
-          ? `${t.name} is not compatible with ${other.name}`
-          : `${t.name} and ${other.name} both fill the "${clash}" slot`,
-      })
-      const key = pair(t.id, other.id)
-      if (!seenConflict.has(key)) {
-        seenConflict.add(key)
-        push(t.id, other.id, 'conflicts')
-      }
-    }
+    drawLinks(acc, t, selected)
+    checkNeeds(acc, t, selected)
+    checkConflicts(acc, t, selected)
   }
-
-  // stack-wide completeness (self-hosted with no DB, users with no auth, RAG with no vector store, ...)
-  for (const r of stackRules) {
-    if (!r.when.every((c) => caps.has(c))) continue
-    const blame = selected.filter((t) => t.provides?.some((c) => r.when.includes(c)))
-    const satisfied = r.requires.filter((c) => caps.has(c))
-
-    if (satisfied.length) {
-      // the rule describes a real dependency — now that both ends are present, draw it.
-      // This is why adding Pinecone finally wires LangChain to it.
-      for (const cap of satisfied)
-        for (const provider of selected.filter((o) => o.provides?.includes(cap)))
-          for (const t of blame) if (t.id !== provider.id) push(t.id, provider.id, 'requires', 'n-1')
-      continue
-    }
-
-    for (const t of blame) problems.push({ techId: t.id, severity: r.severity, message: r.message })
-    // one of `requires` would satisfy the rule — offer them all as candidates
-    missing.set(r.requires[0], [...(missing.get(r.requires[0]) ?? []), ...blame.map((t) => t.id)])
-  }
+  for (const r of stackRules) applyStackRule(acc, r, selected, caps)
 
   return {
-    problems,
-    edges: mergePairs(edges),
+    problems: acc.problems,
+    edges: mergePairs(acc.edges),
     caps,
-    missing: [...missing].map(([cap, neededBy]) => ({ cap, neededBy: [...new Set(neededBy)] })),
+    missing: [...acc.missing].map(([cap, neededBy]) => ({ cap, neededBy: [...new Set(neededBy)] })),
   }
 }
 

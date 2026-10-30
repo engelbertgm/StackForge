@@ -1,0 +1,11 @@
+{
+  "id": "dependency-updates-bot",
+  "result": "pass",
+  "files": [
+    ".github/dependabot.yml"
+  ],
+  "notes": ".github/dependabot.yml: npm (weekly, minor+patch grouped) and github-actions (monthly), directory /. Valid v2 config. File is untracked; commit it to activate.",
+  "hash": "5a6aaf35e76528437101d5fc8901225f8618fa80de992d76899e64d10ecce9d1",
+  "date": "2026-10-30",
+  "by": "mep-security"
+}

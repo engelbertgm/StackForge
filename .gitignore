@@ -25,3 +25,8 @@ dist-ssr
 
 # scratch screenshots
 SCREENSHOT*.png
+.baladero/
+
+# env files (only the example is committed)
+.env*
+!.env.example

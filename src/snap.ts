@@ -38,16 +38,9 @@ const ON = 0.5
 /** the closest edge pairing within tolerance, or null when nothing is near enough */
 function closest(mine: number[], peers: Box[], lines: (b: Box) => number[], tol: number) {
   let hit: { delta: number; at: number } | null = null
-  for (const peer of peers) {
-    for (const theirs of lines(peer)) {
-      for (const own of mine) {
-        const delta = theirs - own
-        if (Math.abs(delta) <= tol && (!hit || Math.abs(delta) < Math.abs(hit.delta))) {
-          hit = { delta, at: theirs }
-        }
-      }
-    }
-  }
+  const pairs = peers.flatMap((peer) => lines(peer).flatMap((at) => mine.map((own) => ({ delta: at - own, at }))))
+  for (const p of pairs)
+    if (Math.abs(p.delta) <= tol && (!hit || Math.abs(p.delta) < Math.abs(hit.delta))) hit = p
   return hit
 }
 

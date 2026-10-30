@@ -1,10 +1,4 @@
-import {
-  BaseEdge,
-  Handle,
-  Position,
-  type EdgeProps,
-  type NodeProps,
-} from '@xyflow/react'
+import { BaseEdge, type EdgeProps, Handle, type NodeProps, Position } from '@xyflow/react'
 import { useState } from 'react'
 import { groupById } from '../catalog'
 import { GROUP_HEADER, NODE_H, NODE_W, PAD } from '../layout'
@@ -16,7 +10,7 @@ import type { Card, Problem, Rel, Tech } from '../types'
  * Solid lines are real runtime dependencies: something requires, reads or deploys something else.
  * Direction is uniform: the arrow points at what you depend on.
  */
-
+/** Colour, label and line style for every relationship type; shared by the wires and the legend. */
 export const REL: Record<Rel, { color: string; label: string; dash?: boolean; both?: boolean }> = {
   extends: { color: '#a78bfa', label: 'builds on', dash: true },
   builds: { color: '#a78bfa', label: 'builds', dash: true },
@@ -53,7 +47,10 @@ const CARD_ENDS: Record<Card, [string, string]> = {
 
 function Icon({ tech }: { tech: Tech }) {
   const [failed, setFailed] = useState(false)
-  const initials = tech.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()
+  const initials = tech.name
+    .replace(/[^A-Za-z0-9]/g, '')
+    .slice(0, 2)
+    .toUpperCase()
 
   if (!tech.icon || failed)
     return (
@@ -79,6 +76,7 @@ function Icon({ tech }: { tech: Tech }) {
 
 /* ---------- tech block ---------- */
 
+/** Props a TechNode card receives from the canvas. */
 export interface TechData extends Record<string, unknown> {
   tech: Tech
   problems: Problem[]
@@ -88,15 +86,27 @@ export interface TechData extends Record<string, unknown> {
   onRemove: (id: string) => void
 }
 
+/** the card's outline: red for an error, amber for a warning, its own colour while active */
+function ringColor(error: boolean, warn: boolean, active: boolean, color: string): string | null {
+  if (error) return '#ef4444'
+  if (warn) return '#f59e0b'
+  return active ? color : null
+}
+
+const cardShadow = (ring: string | null) =>
+  ring ? `0 0 0 1.5px ${ring}, 0 0 16px -3px ${ring}, 0 2px 6px rgba(0,0,0,0.6)` : '0 2px 6px rgba(0,0,0,0.5)'
+
+/** One technology card on the canvas: name, icon, language chips and its problem ring. */
 export function TechNode({ data }: NodeProps & { data: TechData }) {
   const { tech, problems, dimmed, active, onHover, onRemove } = data
   const error = problems.some((p) => p.severity === 'error')
   const warn = !error && problems.length > 0
 
   // opaque on purpose: wires pass behind the card, never through the text
-  const ring = error ? '#ef4444' : warn ? '#f59e0b' : active ? tech.color : null
+  const ring = ringColor(error, warn, active, tech.color)
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: hover only feeds the inspector panel; React Flow wraps the card in its own focusable, clickable node
     <div
       className="group relative rounded-lg px-2.5 py-2 transition-opacity"
       onMouseEnter={() => onHover(tech.id)}
@@ -106,17 +116,19 @@ export function TechNode({ data }: NodeProps & { data: TechData }) {
         height: NODE_H,
         opacity: dimmed ? 0.14 : 1,
         background: '#171b22',
-        boxShadow: ring
-          ? `0 0 0 1.5px ${ring}, 0 0 16px -3px ${ring}, 0 2px 6px rgba(0,0,0,0.6)`
-          : '0 2px 6px rgba(0,0,0,0.5)',
+        boxShadow: cardShadow(ring),
       }}
     >
       <Handle type="target" position={Position.Left} className="!opacity-0" />
       <Handle type="source" position={Position.Right} className="!opacity-0" />
 
       <button
+        type="button"
         title={`Remove ${tech.name}`}
-        onClick={(e) => { e.stopPropagation(); onRemove(tech.id) }}
+        onClick={(e) => {
+          e.stopPropagation()
+          onRemove(tech.id)
+        }}
         className="absolute -right-2 -top-2 z-20 hidden h-[18px] w-[18px] items-center justify-center rounded-full bg-[#2a3038] text-white/70 shadow-md ring-1 ring-black/40 hover:bg-red-500 hover:text-white group-hover:flex"
       >
         <svg viewBox="0 0 16 16" width="9" height="9" aria-hidden="true">
@@ -145,12 +157,14 @@ export function TechNode({ data }: NodeProps & { data: TechData }) {
 
 /* ---------- group box ---------- */
 
+/** Props a GroupNode box receives from the canvas. */
 export interface GroupData extends Record<string, unknown> {
   groupId: string
   sections: { name: string; y: number }[]
   dimmed: boolean
 }
 
+/** The coloured box that holds one group of technologies, with its section lanes. */
 export function GroupNode({ data }: NodeProps & { data: GroupData }) {
   const group = groupById.get(data.groupId)!
   return (
@@ -190,12 +204,12 @@ export function GroupNode({ data }: NodeProps & { data: GroupData }) {
  * clamped to its parent box — and App renders that spot as this outline. On release the real
  * block is committed here and the ghost goes away.
  */
-
 export interface GhostData extends Record<string, unknown> {
   color: string
   label: string
 }
 
+/** Dashed preview of where a dragged block or box will land. */
 export function GhostNode({ data }: NodeProps & { data: GhostData }) {
   return (
     <div
@@ -206,10 +220,7 @@ export function GhostNode({ data }: NodeProps & { data: GhostData }) {
         boxShadow: `0 0 22px -6px ${data.color}`,
       }}
     >
-      <span
-        className="truncate px-2 text-[11px] font-semibold uppercase tracking-wider"
-        style={{ color: data.color }}
-      >
+      <span className="truncate px-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: data.color }}>
         {data.label}
       </span>
     </div>
@@ -218,6 +229,7 @@ export function GhostNode({ data }: NodeProps & { data: GhostData }) {
 
 /* ---------- wires: geometry comes from planRoutes(), this only paints it ---------- */
 
+/** Props a RelEdge wire receives: relationship, cardinality and its planned route. */
 export interface RelEdgeData extends Record<string, unknown> {
   rel: Rel
   card?: Card
@@ -229,6 +241,7 @@ export interface RelEdgeData extends Record<string, unknown> {
   route?: Route
 }
 
+/** Paints one relationship wire along the route planRoutes() chose, with its cardinality marks. */
 export function RelEdge({ id, markerStart, markerEnd, data }: EdgeProps & { data?: RelEdgeData }) {
   if (!data?.route) return null
   const { route } = data
@@ -269,8 +282,12 @@ export function RelEdge({ id, markerStart, markerEnd, data }: EdgeProps & { data
           textAnchor="middle"
           opacity={opacity}
         >
-          <text x={route.ls.x} y={route.ls.y}>{ends[0]}</text>
-          <text x={route.lt.x} y={route.lt.y}>{ends[1]}</text>
+          <text x={route.ls.x} y={route.ls.y}>
+            {ends[0]}
+          </text>
+          <text x={route.lt.x} y={route.lt.y}>
+            {ends[1]}
+          </text>
         </g>
       )}
 
@@ -297,6 +314,3 @@ export function RelEdge({ id, markerStart, markerEnd, data }: EdgeProps & { data
     </>
   )
 }
-
-export const nodeTypes = { tech: TechNode, group: GroupNode, ghost: GhostNode }
-export const edgeTypes = { rel: RelEdge }

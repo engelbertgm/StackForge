@@ -91,7 +91,7 @@ show you a stack that could not exist.
 - Export and import the whole stack as JSON
 - Undo on delete, with credentials and position restored intact
 
-## Run it
+## Getting started
 
 Requires Node 20+ and [pnpm](https://pnpm.io).
 
@@ -108,9 +108,18 @@ pnpm dev            # http://localhost:5173
 | `pnpm build` | Type-check (`tsc -b`) and build to `dist/` |
 | `pnpm preview` | Serve the production build |
 | `pnpm check` | Rule engine, catalog integrity, wire-router and snapping tests |
-| `pnpm lint` | oxlint |
+| `pnpm lint` | Biome: lint (complexity ≤ 10) and formatting check |
+| `pnpm format` | Biome: rewrite formatting |
+| `pnpm typecheck` | `tsc -b`, strict |
+| `pnpm knip` / `pnpm dup` | Unused exports, files and dependencies / duplicated code (≤ 3%) |
 
 Nothing to configure — there are no environment variables and no services to stand up.
+
+`pnpm install` also installs the git hooks (lefthook): gitleaks scans staged changes for
+secrets, Biome checks staged files, and commitlint enforces
+[Conventional Commits](https://www.conventionalcommits.org). The secret scan needs the
+[gitleaks](https://github.com/gitleaks/gitleaks) binary once: `winget install gitleaks` or
+`brew install gitleaks`.
 
 Want something to try it on? `examples/stress-test.json` is a deliberately overloaded
 94-technology stack (231 connections, every box populated) — load it with **Import**.
@@ -182,13 +191,13 @@ id, a `needs` capability nothing provides, or a build glob aimed at a section th
 | ![Tailwind](https://img.shields.io/badge/Tailwind%204-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white) | Styling, via `@tailwindcss/vite` |
 | ![Zustand](https://img.shields.io/badge/Zustand%205-443E38?style=flat-square&logo=react&logoColor=white) | State and `localStorage` persistence |
 | ![React Flow](https://img.shields.io/badge/@xyflow/react%2012-FF0072?style=flat-square&logo=diagramsdotnet&logoColor=white) | Canvas, panning, minimap |
-| ![oxlint](https://img.shields.io/badge/oxlint-CC0000?style=flat-square&logo=rust&logoColor=white) | Linting |
+| ![Biome](https://img.shields.io/badge/Biome-60A5FA?style=flat-square&logo=biome&logoColor=white) | Linting and formatting |
 | ![pnpm](https://img.shields.io/badge/pnpm-F69220?style=flat-square&logo=pnpm&logoColor=white) | Package manager |
 
 No UI kit, no state library beyond Zustand, no test framework — `node --test` and
 `assert` do the job.
 
-## Files
+## Structure
 
 ```
 src/

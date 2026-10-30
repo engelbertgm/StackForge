@@ -1,0 +1,12 @@
+{
+  "id": "env-gitignored",
+  "result": "pass",
+  "files": [
+    ".env.example",
+    ".gitignore"
+  ],
+  "notes": ".gitignore:31-32 has '.env*' and '!.env.example'; git check-ignore confirms .env, .env.local, .env.production ignored and .env.example not. .env.example has only comments, no values. No .env file ever appears in git history (git log --all --name-only). .gitignore change and .env.example are uncommitted; commit them.",
+  "hash": "19f175fb3f2250bf937a9eeed1116647aa65645439d5959dcae44df18ce4d975",
+  "date": "2026-10-30",
+  "by": "mep-security"
+}

@@ -52,47 +52,44 @@ export function roleOf(build: Build, tech: Tech): string | null {
 export const allLangs = [...new Set(techs.flatMap((t) => t.langs))].sort()
 export const allTags = [...new Set(techs.flatMap((t) => t.tags ?? []))].sort()
 
+// a link or need may name a tech id or a capability; one that matches neither is a typo
+const provided = new Set(techs.flatMap((t) => t.provides ?? []))
+const exists = (ref: string) => techById.has(ref) || provided.has(ref)
+
+const duplicateIds = () => techs.filter((t, i) => techs.findIndex((o) => o.id === t.id) !== i).map((t) => `duplicate id: ${t.id}`)
+
+/** Why `group:section` names no real slot, or null if it does. `*` stands for the whole box. */
+function badSlot(gid: string, section: string): string | null {
+  const g = groupById.get(gid)
+  if (!g) return `unknown group "${gid}"`
+  if (section === '*' || g.sections.includes(section)) return null
+  return `"${section}" is not a ${g.name} section`
+}
+
+function techErrors(t: Tech): string[] {
+  const slot = badSlot(t.group, t.section)
+  return [
+    ...(slot ? [`${t.id}: ${slot}`] : []),
+    ...(t.links ?? []).filter((l) => !exists(l.to)).map((l) => `${t.id}: link target "${l.to}" does not exist`),
+    ...(t.conflicts ?? []).filter((c) => !techById.has(c)).map((c) => `${t.id}: conflict target "${c}" does not exist`),
+    // a `needs` nothing can satisfy is a typo, not a stack problem
+    ...(t.needs ?? []).filter((n) => !exists(n)).map((n) => `${t.id}: needs "${n}" which no tech provides`),
+  ]
+}
+
+const ruleErrors = (r: StackRule) =>
+  [...r.when, ...r.requires].filter((c) => !provided.has(c)).map((c) => `rule ${r.id}: capability "${c}" is never provided`)
+
+// a build glob pointing at a section that does not exist would silently light up nothing
+const buildErrors = (b: Build) =>
+  Object.entries(b.roles).flatMap(([role, globs]) =>
+    globs.flatMap((glob) => {
+      const why = badSlot(...(glob.split(':') as [string, string]))
+      return why ? [`build ${b.id}/${role}: ${why}`] : []
+    }),
+  )
+
 /** Catalog integrity — run by catalog.test.ts and logged in dev. */
 export function validateCatalog(): string[] {
-  const errors: string[] = []
-  const seen = new Set<string>()
-  // a link or need may name a tech id or a capability; one that matches neither is a typo
-  const provided = new Set(techs.flatMap((t) => t.provides ?? []))
-
-  for (const t of techs) {
-    if (seen.has(t.id)) errors.push(`duplicate id: ${t.id}`)
-    seen.add(t.id)
-
-    const g = groupById.get(t.group)
-    if (!g) errors.push(`${t.id}: unknown group "${t.group}"`)
-    else if (!g.sections.includes(t.section))
-      errors.push(`${t.id}: section "${t.section}" is not one of ${g.name} sections`)
-
-    for (const l of t.links ?? [])
-      if (!techById.has(l.to) && !provided.has(l.to)) errors.push(`${t.id}: link target "${l.to}" does not exist`)
-    for (const c of t.conflicts ?? [])
-      if (!techs.some((o) => o.id === c)) errors.push(`${t.id}: conflict target "${c}" does not exist`)
-  }
-
-  // a `needs` nothing can satisfy is a typo, not a stack problem
-  for (const t of techs)
-    for (const n of t.needs ?? [])
-      if (!provided.has(n) && !techById.has(n)) errors.push(`${t.id}: needs "${n}" which no tech provides`)
-
-  for (const r of stackRules)
-    for (const c of [...r.when, ...r.requires])
-      if (!provided.has(c)) errors.push(`rule ${r.id}: capability "${c}" is never provided`)
-
-  // a build glob pointing at a section that does not exist would silently light up nothing
-  for (const b of builds)
-    for (const [role, globs] of Object.entries(b.roles))
-      for (const glob of globs) {
-        const [gid, section] = glob.split(':')
-        const g = groupById.get(gid)
-        if (!g) errors.push(`build ${b.id}/${role}: unknown group "${gid}"`)
-        else if (section !== '*' && !g.sections.includes(section))
-          errors.push(`build ${b.id}/${role}: "${section}" is not a ${g.name} section`)
-      }
-
-  return errors
+  return [...duplicateIds(), ...techs.flatMap(techErrors), ...stackRules.flatMap(ruleErrors), ...builds.flatMap(buildErrors)]
 }

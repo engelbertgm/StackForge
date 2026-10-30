@@ -12,19 +12,31 @@
  */
 
 export type Side = 'left' | 'right' | 'top' | 'bottom'
-export interface Pt { x: number; y: number }
+export interface Pt {
+  x: number
+  y: number
+}
 export interface Rect {
-  x: number; y: number; w: number; h: number
+  x: number
+  y: number
+  w: number
+  h: number
   /** id of the group box this block sits in, so its own box is not treated as an obstacle */
   parent?: string
   /** true for group boxes, which are softer obstacles than the blocks themselves */
   box?: boolean
 }
-export interface Link { id: string; source: string; target: string }
+export interface Link {
+  id: string
+  source: string
+  target: string
+}
 
 export interface Route {
-  sx: number; sy: number
-  tx: number; ty: number
+  sx: number
+  sy: number
+  tx: number
+  ty: number
   path: string
   /** path length, so the travelling dot moves at one speed on long and short wires alike */
   len: number
@@ -59,24 +71,34 @@ const isH = (s: Side) => s === 'left' || s === 'right'
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 const near = (a: number, b: number) => Math.abs(a - b) < 0.5
 
-export function sidePoint(r: Rect, s: Side, along: number): Pt {
+function sidePoint(r: Rect, s: Side, along: number): Pt {
   switch (s) {
-    case 'left': return { x: r.x, y: r.y + r.h * along }
-    case 'right': return { x: r.x + r.w, y: r.y + r.h * along }
-    case 'top': return { x: r.x + r.w * along, y: r.y }
-    default: return { x: r.x + r.w * along, y: r.y + r.h }
+    case 'left':
+      return { x: r.x, y: r.y + r.h * along }
+    case 'right':
+      return { x: r.x + r.w, y: r.y + r.h * along }
+    case 'top':
+      return { x: r.x + r.w * along, y: r.y }
+    default:
+      return { x: r.x + r.w * along, y: r.y + r.h }
   }
 }
 
 /** the range a shared corridor may sit in without either end doubling back over its block */
 function interval(pv: number, dp: number, qv: number, dq: number): [number, number] | null {
-  let lo = -Infinity, hi = Infinity
-  for (const [v, d] of [[pv, dp], [qv, dq]] as const) {
+  let lo = -Infinity,
+    hi = Infinity
+  for (const [v, d] of [
+    [pv, dp],
+    [qv, dq],
+  ] as const) {
     if (d > 0) lo = Math.max(lo, v)
     if (d < 0) hi = Math.min(hi, v)
   }
   return lo > hi ? null : [lo, hi]
 }
+
+const collinear = (a: Pt, b: Pt, c: Pt) => (near(a.x, b.x) && near(b.x, c.x)) || (near(a.y, b.y) && near(b.y, c.y))
 
 function simplify(pts: Pt[]): Pt[] {
   const out: Pt[] = []
@@ -85,10 +107,7 @@ function simplify(pts: Pt[]): Pt[] {
     if (last && near(last.x, p.x) && near(last.y, p.y)) continue
     out.push(p)
   }
-  for (let i = out.length - 2; i > 0; i--) {
-    const a = out[i - 1], b = out[i], c = out[i + 1]
-    if ((near(a.x, b.x) && near(b.x, c.x)) || (near(a.y, b.y) && near(b.y, c.y))) out.splice(i, 1)
-  }
+  for (let i = out.length - 2; i > 0; i--) if (collinear(out[i - 1], out[i], out[i + 1])) out.splice(i, 1)
   return out
 }
 
@@ -97,8 +116,18 @@ function simplify(pts: Pt[]): Pt[] {
  * sits, `min`/`max` how far it may slide before it folds back over a block, and `lo`/`hi` how
  * far it runs — two corridors only need separating if their runs actually overlap.
  */
-export interface Corridor { axis: 'x' | 'y'; v: number; min: number; max: number; lo: number; hi: number }
-export interface Wire { pts: Pt[]; corridor?: Corridor }
+interface Corridor {
+  axis: 'x' | 'y'
+  v: number
+  min: number
+  max: number
+  lo: number
+  hi: number
+}
+export interface Wire {
+  pts: Pt[]
+  corridor?: Corridor
+}
 
 const span = (a: number, b: number) => ({ lo: Math.min(a, b), hi: Math.max(a, b) })
 
@@ -112,94 +141,127 @@ function permutations(n: number): number[][] {
 }
 
 /**
+ * A wire leaving top/bottom is the mirror image, across the diagonal, of one leaving
+ * left/right — so `wire` only solves the sideways case and mirrors the rest through it.
+ */
+const flip = (p: Pt): Pt => ({ x: p.y, y: p.x })
+const FLIP: Record<Side, Side> = { left: 'top', top: 'left', right: 'bottom', bottom: 'right' }
+const stub = (a: Pt, s: Side): Pt => ({ x: a.x + DX[s] * STUB, y: a.y + DY[s] * STUB })
+
+/**
  * One wire between two sockets. `lane` overrides the shared corridor's position — that is
  * how two wires running the same way get pulled apart.
  */
 export function wire(a: Pt, sa: Side, b: Pt, sb: Side, lane?: number): Wire {
-  const p = { x: a.x + DX[sa] * STUB, y: a.y + DY[sa] * STUB }
-  const q = { x: b.x + DX[sb] * STUB, y: b.y + DY[sb] * STUB }
-  const ha = isH(sa), hb = isH(sb)
+  if (isH(sa)) return wireSideways(a, sa, b, sb, lane)
+  const w = wireSideways(flip(a), FLIP[sa], flip(b), FLIP[sb], lane)
+  if (!w.corridor) return { pts: w.pts.map(flip) }
+  return { pts: w.pts.map(flip), corridor: { ...w.corridor, axis: w.corridor.axis === 'x' ? 'y' : 'x' } }
+}
 
-  if (ha === hb) {
-    // both sideways or both up/down: one shared corridor across the middle
-    const pv = ha ? p.x : p.y
-    const qv = ha ? q.x : q.y
-    const iv = interval(pv, ha ? DX[sa] : DY[sa], qv, ha ? DX[sb] : DY[sb])
-    if (iv) {
-      // Both ends leaving the same way puts the ideal corridor exactly on its own bound, i.e.
-      // hugging the blocks. Push it clear so the loop looks deliberate.
-      const oneSided = iv[0] === -Infinity || iv[1] === Infinity
-      const wanted = oneSided
-        ? iv[1] === Infinity ? iv[0] + DODGE : iv[1] - DODGE
-        : (pv + qv) / 2
-      const v = clamp(lane ?? wanted, iv[0], iv[1])
-      const pts = ha
-        ? [a, p, { x: v, y: p.y }, { x: v, y: q.y }, q, b]
-        : [a, p, { x: p.x, y: v }, { x: q.x, y: v }, q, b]
-      const run = ha ? span(p.y, q.y) : span(p.x, q.x)
-      return { pts: simplify(pts), corridor: { axis: ha ? 'x' : 'y', v, min: iv[0], max: iv[1], ...run } }
-    }
-    // sides face apart: step off both blocks first, then meet on a lane between them
-    const bounds = ha ? span(p.y, q.y) : span(p.x, q.x)
-    const w = clamp(lane ?? (bounds.lo + bounds.hi) / 2, bounds.lo, bounds.hi)
-    const pts = ha
-      ? [a, p, { x: p.x, y: w }, { x: q.x, y: w }, q, b]
-      : [a, p, { x: w, y: p.y }, { x: w, y: q.y }, q, b]
-    return {
-      pts: simplify(pts),
-      corridor: {
-        axis: ha ? 'y' : 'x', v: w, min: bounds.lo, max: bounds.hi,
-        ...(ha ? span(p.x, q.x) : span(p.y, q.y)),
-      },
-    }
-  }
+/** `wire` for a source socket on the left or right of its block */
+function wireSideways(a: Pt, sa: Side, b: Pt, sb: Side, lane?: number): Wire {
+  const p = stub(a, sa)
+  const q = stub(b, sb)
+  if (!isH(sb)) return oneCorner(a, b, p, q, sa, sb, lane)
+  // both sideways: one shared corridor across the middle, or a lane between sides that face apart
+  const iv = interval(p.x, DX[sa], q.x, DX[sb])
+  return iv ? sharedCorridor(a, b, p, q, iv, lane) : facingApart(a, b, p, q, lane)
+}
 
-  // one sideways, one up/down: a single corner, when it lies ahead of both ends
-  const corner = ha ? { x: q.x, y: p.y } : { x: p.x, y: q.y }
-  const okA = ha ? (q.x - p.x) * DX[sa] >= 0 : (q.y - p.y) * DY[sa] >= 0
-  const okB = ha ? (p.y - q.y) * DY[sb] >= 0 : (p.x - q.x) * DX[sb] >= 0
-  if (okA && okB && lane === undefined) return { pts: simplify([a, p, corner, q, b]) }
+function sharedCorridor(a: Pt, b: Pt, p: Pt, q: Pt, [min, max]: [number, number], lane?: number): Wire {
+  // Both ends leaving the same way puts the ideal corridor exactly on its own bound, i.e.
+  // hugging the blocks. Push it clear so the loop looks deliberate.
+  let wanted = (p.x + q.x) / 2
+  if (max === Infinity) wanted = min + DODGE
+  else if (min === -Infinity) wanted = max - DODGE
+  const v = clamp(lane ?? wanted, min, max)
+  const pts = [a, p, { x: v, y: p.y }, { x: v, y: q.y }, q, b]
+  return { pts: simplify(pts), corridor: { axis: 'x', v, min, max, ...span(p.y, q.y) } }
+}
+
+// sides face apart: step off both blocks first, then meet on a lane between them
+function facingApart(a: Pt, b: Pt, p: Pt, q: Pt, lane?: number): Wire {
+  const bounds = span(p.y, q.y)
+  const w = clamp(lane ?? (bounds.lo + bounds.hi) / 2, bounds.lo, bounds.hi)
+  const pts = [a, p, { x: p.x, y: w }, { x: q.x, y: w }, q, b]
+  return { pts: simplify(pts), corridor: { axis: 'y', v: w, min: bounds.lo, max: bounds.hi, ...span(p.x, q.x) } }
+}
+
+// one sideways, one up/down: a single corner, when it lies ahead of both ends
+function oneCorner(a: Pt, b: Pt, p: Pt, q: Pt, sa: Side, sb: Side, lane?: number): Wire {
+  const ahead = (q.x - p.x) * DX[sa] >= 0 && (p.y - q.y) * DY[sb] >= 0
+  if (ahead && lane === undefined) return { pts: simplify([a, p, { x: q.x, y: p.y }, q, b]) }
 
   // otherwise step clear of both blocks and cross on a lane
-  const out = ha ? DX[sa] : DY[sa]
-  const base = (ha ? p.x : p.y) + out * DODGE
-  const v = lane ?? base
-  const w = ha ? q.y + DY[sb] * STUB : q.x + DX[sb] * STUB
-  const pts = ha
-    ? [a, p, { x: v, y: p.y }, { x: v, y: w }, { x: q.x, y: w }, q, b]
-    : [a, p, { x: p.x, y: v }, { x: w, y: v }, { x: w, y: q.y }, q, b]
-  return {
-    pts: simplify(pts),
-    corridor: {
-      axis: ha ? 'x' : 'y', v,
-      min: out > 0 ? ha ? p.x : p.y : -Infinity,
-      max: out > 0 ? Infinity : ha ? p.x : p.y,
-      ...(ha ? span(p.y, w) : span(p.x, w)),
-    },
-  }
+  const out = DX[sa]
+  const v = lane ?? p.x + out * DODGE
+  const w = q.y + DY[sb] * STUB
+  const pts = [a, p, { x: v, y: p.y }, { x: v, y: w }, { x: q.x, y: w }, q, b]
+  const [min, max] = out > 0 ? [p.x, Infinity] : [-Infinity, p.x]
+  return { pts: simplify(pts), corridor: { axis: 'x', v, min, max, ...span(p.y, w) } }
 }
 
 const overlaps = (a: Pt, b: Pt, r: Rect) =>
-  Math.max(a.x, b.x) > r.x - MARGIN && Math.min(a.x, b.x) < r.x + r.w + MARGIN &&
-  Math.max(a.y, b.y) > r.y - MARGIN && Math.min(a.y, b.y) < r.y + r.h + MARGIN
+  Math.max(a.x, b.x) > r.x - MARGIN &&
+  Math.min(a.x, b.x) < r.x + r.w + MARGIN &&
+  Math.max(a.y, b.y) > r.y - MARGIN &&
+  Math.min(a.y, b.y) < r.y + r.h + MARGIN
 
-export function cost(pts: Pt[], obstacles: { r: Rect; w: number }[]): number {
+type Obstacle = { r: Rect; w: number }
+
+function cost(pts: Pt[], obstacles: Obstacle[]): number {
   let c = (pts.length - 2) * BEND
   for (let i = 1; i < pts.length; i++) {
-    const a = pts[i - 1], b = pts[i]
+    const a = pts[i - 1],
+      b = pts[i]
     c += Math.abs(b.x - a.x) + Math.abs(b.y - a.y)
     for (const o of obstacles) if (overlaps(a, b, o.r)) c += o.w
   }
   return c
 }
 
-export function length(pts: Pt[]): number {
+function length(pts: Pt[]): number {
   let n = 0
   for (let i = 1; i < pts.length; i++) n += Math.abs(pts[i].x - pts[i - 1].x) + Math.abs(pts[i].y - pts[i - 1].y)
   return n
 }
 
 const round = (n: number) => Math.round(n * 100) / 100
+const xy = (p: Pt) => round(p.x) + ',' + round(p.y)
+
+/** the arcs a horizontal run from `from` to `stop` makes over the crossings in `hops` */
+function hopArcs(from: Pt, stop: Pt, dir: number, hops: Pt[]): string {
+  // sweep chosen so the arc always bulges upward, whichever way the wire runs
+  const sweep = dir > 0 ? 1 : 0
+  return hops
+    .filter((h) => near(h.y, from.y) && (h.x - from.x) * dir > BRIDGE && (stop.x - h.x) * dir > BRIDGE)
+    .sort((p, q) => (p.x - q.x) * dir)
+    .map(
+      (h) =>
+        'L' +
+        xy({ x: h.x - dir * BRIDGE, y: h.y }) +
+        'A' +
+        BRIDGE +
+        ' ' +
+        BRIDGE +
+        ' 0 0 ' +
+        sweep +
+        ' ' +
+        xy({ x: h.x + dir * BRIDGE, y: h.y }),
+    )
+    .join('')
+}
+
+/** how far short of corner `c` the straight runs stop, so the curve fits both of them */
+const cornerRadius = (a: Pt, c: Pt, b: Pt) =>
+  Math.min(RADIUS, Math.hypot(c.x - a.x, c.y - a.y) / 2, Math.hypot(b.x - c.x, b.y - c.y) / 2)
+
+/** the point `r` along the way from `a` towards `b` */
+function toward(a: Pt, b: Pt, r: number): Pt {
+  const len = Math.hypot(b.x - a.x, b.y - a.y) || 1
+  return { x: a.x + ((b.x - a.x) / len) * r, y: a.y + ((b.y - a.y) / len) * r }
+}
 
 /**
  * Rounded orthogonal path; a straight run stays one straight line. `hops` are points where
@@ -208,71 +270,55 @@ const round = (n: number) => Math.round(n * 100) / 100
  * hops over whom consistent across the whole diagram.
  */
 export function toPath(pts: Pt[], hops: Pt[] = []): string {
-  const corner = (a: Pt, c: Pt, b: Pt) =>
-    Math.min(RADIUS, Math.hypot(c.x - a.x, c.y - a.y) / 2, Math.hypot(b.x - c.x, b.y - c.y) / 2)
-
-  let d = 'M' + round(pts[0].x) + ',' + round(pts[0].y)
+  let d = 'M' + xy(pts[0])
   let from = pts[0]
 
   for (let i = 1; i < pts.length; i++) {
     const c = pts[i]
-    const last = i === pts.length - 1
-    const r = last ? 0 : corner(pts[i - 1], c, pts[i + 1])
+    const next = pts[i + 1]
+    const r = next ? cornerRadius(pts[i - 1], c, next) : 0
     // where this straight run ends: short of the corner by its radius
-    const len = Math.hypot(c.x - from.x, c.y - from.y) || 1
-    const ux = (c.x - from.x) / len, uy = (c.y - from.y) / len
-    const stop = { x: c.x - ux * r, y: c.y - uy * r }
-
-    if (uy === 0 && hops.length) {
-      const dir = Math.sign(ux)
-      const on = hops
-        .filter((h) => near(h.y, from.y) && (h.x - from.x) * dir > BRIDGE && (stop.x - h.x) * dir > BRIDGE)
-        .sort((p, q) => (p.x - q.x) * dir)
-      for (const h of on) {
-        d += 'L' + round(h.x - dir * BRIDGE) + ',' + round(h.y)
-        // sweep chosen so the arc always bulges upward, whichever way the wire runs
-        d += 'A' + BRIDGE + ' ' + BRIDGE + ' 0 0 ' + (dir > 0 ? 1 : 0) + ' ' + round(h.x + dir * BRIDGE) + ',' + round(h.y)
-      }
-    }
-
-    d += 'L' + round(stop.x) + ',' + round(stop.y)
-    if (!last) {
-      const nx = pts[i + 1]
-      const nl = Math.hypot(nx.x - c.x, nx.y - c.y) || 1
-      const out = { x: c.x + ((nx.x - c.x) / nl) * r, y: c.y + ((nx.y - c.y) / nl) * r }
-      d += 'Q' + round(c.x) + ',' + round(c.y) + ' ' + round(out.x) + ',' + round(out.y)
-      from = out
-    }
+    const stop = toward(c, from, r)
+    if (from.y === c.y && from.x !== c.x) d += hopArcs(from, stop, Math.sign(c.x - from.x), hops)
+    d += 'L' + xy(stop)
+    if (!next) break
+    from = toward(c, next, r)
+    d += 'Q' + xy(c) + ' ' + xy(from)
   }
   return d
 }
+
+type Run = { id: string; at: number; lo: number; hi: number }
+
+/** every straight run of every wire, split into horizontal and vertical */
+function runs(wires: { id: string; pts: Pt[] }[]) {
+  const hs: Run[] = []
+  const vs: Run[] = []
+  for (const w of wires)
+    for (let i = 1; i < w.pts.length; i++) {
+      const a = w.pts[i - 1],
+        b = w.pts[i]
+      if (near(a.y, b.y)) hs.push({ id: w.id, at: a.y, ...span(a.x, b.x) })
+      else if (near(a.x, b.x)) vs.push({ id: w.id, at: a.x, ...span(a.y, b.y) })
+    }
+  return { hs, vs }
+}
+
+// a proper crossing only: touching at a shared endpoint is not something to hop over
+const strictlyInside = (v: number, r: Run) => v > r.lo + BRIDGE && v < r.hi - BRIDGE
+const crosses = (h: Run, v: Run) => v.id !== h.id && strictlyInside(v.at, h) && strictlyInside(h.at, v)
 
 /**
  * Where each wire crosses another. Horizontal runs hop over vertical ones — one rule, applied
  * everywhere, so a crossing never gets two bridges or none.
  */
 export function bridges(wires: { id: string; pts: Pt[] }[]): Map<string, Pt[]> {
-  const hs: { id: string; y: number; lo: number; hi: number }[] = []
-  const vs: { id: string; x: number; lo: number; hi: number }[] = []
-  for (const w of wires)
-    for (let i = 1; i < w.pts.length; i++) {
-      const a = w.pts[i - 1], b = w.pts[i]
-      if (near(a.y, b.y)) hs.push({ id: w.id, y: a.y, ...span(a.x, b.x) })
-      else if (near(a.x, b.x)) vs.push({ id: w.id, x: a.x, ...span(a.y, b.y) })
-    }
-
+  const { hs, vs } = runs(wires)
   const out = new Map<string, Pt[]>()
-  for (const h of hs)
-    for (const v of vs) {
-      if (v.id === h.id) continue
-      // a proper crossing only: touching at a shared endpoint is not something to hop over
-      if (v.x <= h.lo + BRIDGE || v.x >= h.hi - BRIDGE) continue
-      if (h.y <= v.lo + BRIDGE || h.y >= v.hi - BRIDGE) continue
-      const list = out.get(h.id)
-      if (list) list.push({ x: v.x, y: h.y })
-      else out.set(h.id, [{ x: v.x, y: h.y }])
-    }
-
+  for (const h of hs) {
+    const hops = vs.filter((v) => crosses(h, v)).map((v) => ({ x: v.at, y: h.at }))
+    if (hops.length) out.set(h.id, [...(out.get(h.id) ?? []), ...hops])
+  }
   // A wire crossing a handful of others reads better with hops. One crossing twenty of them
   // turns into a comb of bumps that hides the line itself — leave those plain.
   for (const [id, hops] of out) if (hops.length > MAX_BRIDGES) out.delete(id)
@@ -283,159 +329,185 @@ export function bridges(wires: { id: string; pts: Pt[] }[]): Map<string, Pt[]> {
 function mark(pts: Pt[], start: boolean): Pt {
   const a = start ? pts[0] : pts[pts.length - 1]
   const b = start ? pts[1] : pts[pts.length - 2]
-  const dx = Math.sign(b.x - a.x), dy = Math.sign(b.y - a.y)
-  return dx !== 0
-    ? { x: a.x + dx * 16, y: a.y - 7 }
-    : { x: a.x + 10, y: a.y + dy * 16 + 3.5 }
+  const dx = Math.sign(b.x - a.x),
+    dy = Math.sign(b.y - a.y)
+  return dx !== 0 ? { x: a.x + dx * 16, y: a.y - 7 } : { x: a.x + 10, y: a.y + dy * 16 + 3.5 }
+}
+
+/** what planRoutes knows about one wire while it works */
+interface Built {
+  l: Link
+  sa: Side
+  sb: Side
+  a: Pt
+  b: Pt
+  w: Wire
+  obs: Obstacle[]
 }
 
 /**
- * Plans every wire at once. Blocks that are not this wire's own ends are obstacles; group
- * boxes are softer obstacles, except the two the wire's ends live in.
+ * Blocks that are not this wire's own ends are obstacles; group boxes are softer obstacles,
+ * except the two the wire's ends live in.
  */
-export function planRoutes(rects: Map<string, Rect>, links: Link[]): Map<string, Route> {
-  const live = links.filter((l) => rects.has(l.source) && rects.has(l.target))
-  const entries = [...rects]
+function obstaclesFor(rects: Map<string, Rect>, l: Link): Obstacle[] {
+  const ends = [l.source, l.target]
+  const homes = [rects.get(l.source)?.parent, rects.get(l.target)?.parent]
+  return [...rects]
+    .filter(([id, r]) => !(r.box ? homes : ends).includes(id))
+    .map(([, r]) => ({ r, w: r.box ? BLOCK_BOX : BLOCK_CARD }))
+}
 
-  const obstaclesFor = (l: Link) => {
-    const sp = rects.get(l.source)!.parent, tp = rects.get(l.target)!.parent
-    const list: { r: Rect; w: number }[] = []
-    for (const [id, r] of entries) {
-      if (r.box) {
-        if (id !== sp && id !== tp) list.push({ r, w: BLOCK_BOX })
-      } else if (id !== l.source && id !== l.target) {
-        list.push({ r, w: BLOCK_CARD })
+/** which side of each block to use — decided by what the wire would actually cost */
+function cheapestSides(A: Rect, B: Rect, obs: Obstacle[]): { sa: Side; sb: Side } {
+  let best: { sa: Side; sb: Side } = { sa: 'right', sb: 'left' }
+  let bestCost = Infinity
+  for (const sa of SIDES)
+    for (const sb of SIDES) {
+      const c = cost(wire(sidePoint(A, sa, 0.5), sa, sidePoint(B, sb, 0.5), sb).pts, obs)
+      if (c < bestCost - 0.001) {
+        bestCost = c
+        best = { sa, sb }
       }
     }
-    return list
-  }
+  return best
+}
 
-  // 1. which side of each block to use — decided by what the wire would actually cost
-  const chosen = new Map<string, { sa: Side; sb: Side }>()
-  for (const l of live) {
-    const A = rects.get(l.source)!, B = rects.get(l.target)!
-    const obs = obstaclesFor(l)
-    let best: { sa: Side; sb: Side } = { sa: 'right', sb: 'left' }
-    let bestCost = Infinity
-    for (const sa of SIDES) {
-      for (const sb of SIDES) {
-        const c = cost(wire(sidePoint(A, sa, 0.5), sa, sidePoint(B, sb, 0.5), sb).pts, obs)
-        if (c < bestCost - 0.001) { bestCost = c; best = { sa, sb } }
-      }
-    }
-    chosen.set(l.id, best)
+/**
+ * One socket per wire on each side, ordered by where the far end lies, so wires leaving the
+ * same block neither share a point nor cross each other on the way out. Keyed `<link id>|a|b`.
+ */
+function sockets(rects: Map<string, Rect>, live: Link[], chosen: Map<string, { sa: Side; sb: Side }>) {
+  const buckets = new Map<string, { id: string; key: number }[]>()
+  const add = (node: string, side: Side, other: Rect, id: string) => {
+    const k = node + '|' + side
+    const key = isH(side) ? other.y + other.h / 2 : other.x + other.w / 2
+    buckets.set(k, [...(buckets.get(k) ?? []), { id, key }])
   }
-
-  // 2. one socket per wire on each side, ordered by where the far end lies, so wires leaving
-  //    the same block neither share a point nor cross each other on the way out
-  const buckets = new Map<string, { id: string; end: 'a' | 'b'; key: number }[]>()
   for (const l of live) {
     const { sa, sb } = chosen.get(l.id)!
-    const A = rects.get(l.source)!, B = rects.get(l.target)!
-    const push = (node: string, side: Side, other: Rect, end: 'a' | 'b') => {
-      const k = node + '|' + side
-      const key = isH(side) ? other.y + other.h / 2 : other.x + other.w / 2
-      const list = buckets.get(k)
-      if (list) list.push({ id: l.id, end, key })
-      else buckets.set(k, [{ id: l.id, end, key }])
-    }
-    push(l.source, sa, B, 'a')
-    push(l.target, sb, A, 'b')
+    add(l.source, sa, rects.get(l.target)!, l.id + '|a')
+    add(l.target, sb, rects.get(l.source)!, l.id + '|b')
   }
 
   const along = new Map<string, number>()
   for (const list of buckets.values()) {
     list.sort((x, y) => x.key - y.key || x.id.localeCompare(y.id))
-    list.forEach((e, i) => along.set(e.id + '|' + e.end, (i + 1) / (list.length + 1)))
+    for (const [i, e] of list.entries()) along.set(e.id, (i + 1) / (list.length + 1))
   }
+  return along
+}
 
-  // 3. build the wires, then pull apart any that ended up sharing a corridor
-  const built = live.map((l) => {
-    const sides = chosen.get(l.id)!
-    const a = sidePoint(rects.get(l.source)!, sides.sa, along.get(l.id + '|a') ?? 0.5)
-    const b = sidePoint(rects.get(l.target)!, sides.sb, along.get(l.id + '|b') ?? 0.5)
-    return { l, sa: sides.sa, sb: sides.sb, a, b, w: wire(a, sides.sa, b, sides.sb) }
-  })
+/** grow a cluster from `i` while the next corridor is within a lane AND its run overlaps one already in */
+function clusterAt(onAxis: Built[], i: number): Built[] {
+  const cluster = [onAxis[i]]
+  for (const next of onAxis.slice(i + 1)) {
+    const c = next.w.corridor!
+    const close = c.v - cluster[cluster.length - 1].w.corridor!.v < LANE
+    const overlapping = cluster.some((e) => c.lo < e.w.corridor!.hi && c.hi > e.w.corridor!.lo)
+    if (!close || !overlapping) break
+    cluster.push(next)
+  }
+  return cluster
+}
 
-  /*
-   * Pull apart corridors that run alongside each other. Bucketing by `round(v / LANE)` missed
-   * pairs that straddled a bucket edge, and spreading symmetrically around the mean was undone
-   * by the clamp whenever a corridor could only move one way — two wires 5px apart stayed 5px
-   * apart. Cluster by real proximity instead, and spread in the direction they can actually go.
-   */
-  for (const axis of ['x', 'y'] as const) {
-    const onAxis = built
-      .filter((e) => e.w.corridor?.axis === axis)
-      .sort((p, q) => p.w.corridor!.v - q.w.corridor!.v)
+/** the lanes a cluster spreads into — a corridor pinned on one side can only spread away from that side */
+function lanesFor(cluster: Built[]): number[] {
+  const upOnly = cluster.every((e) => e.w.corridor!.max === Infinity)
+  const downOnly = cluster.every((e) => e.w.corridor!.min === -Infinity)
+  const vs = cluster.map((e) => e.w.corridor!.v)
+  const step = downOnly ? -LANE : LANE
+  let from = (Math.min(...vs) + Math.max(...vs)) / 2 - (step * (cluster.length - 1)) / 2
+  if (upOnly) from = Math.max(...vs)
+  else if (downOnly) from = Math.min(...vs)
+  return cluster.map((_, n) => from + n * step)
+}
 
-    let i = 0
-    while (i < onAxis.length) {
-      // grow a cluster while the next corridor is within a lane AND its run overlaps one already in
-      const cluster = [onAxis[i]]
-      let j = i + 1
-      while (j < onAxis.length) {
-        const c = onAxis[j].w.corridor!
-        const near = c.v - cluster[cluster.length - 1].w.corridor!.v < LANE
-        const overlaps = cluster.some((e) => c.lo < e.w.corridor!.hi && c.hi > e.w.corridor!.lo)
-        if (!near || !overlaps) break
-        cluster.push(onAxis[j])
-        j++
-      }
-      i = j
-      if (cluster.length < 2) continue
+/** crossings, tie-broken on total length so a pointless reshuffle keeps the tidier layout */
+function score(wires: { id: string; pts: Pt[] }[], made: Pt[][]): number {
+  let s = 0
+  for (const hops of bridges(wires).values()) s += hops.length
+  for (const pts of made) s += length(pts) / 100000
+  return s
+}
 
-      // a corridor pinned on one side can only spread away from that side
-      const upOnly = cluster.every((e) => e.w.corridor!.max === Infinity)
-      const downOnly = cluster.every((e) => e.w.corridor!.min === -Infinity)
-      const vs = cluster.map((e) => e.w.corridor!.v)
-      const start = upOnly ? Math.max(...vs) : downOnly ? Math.min(...vs) : (Math.min(...vs) + Math.max(...vs)) / 2
-      const step = downOnly ? -LANE : LANE
-      const from = upOnly || downOnly ? start : start - (step * (cluster.length - 1)) / 2
+/*
+ * Which wire gets which lane decides whether they cross. Two wires leaving the same
+ * block and peeling off at different heights only stay apart if the one travelling
+ * furthest takes the lane nearest its source — put them the other way round and the
+ * shorter one has to cut across the longer one's corridor. Rather than encode that as a
+ * rule, try the orderings and keep the one that actually crosses least.
+ * ponytail: brute force, capped at 4 wires a cluster (24 orders); needs a real bus
+ * router only if clusters ever get big enough for that to show up in a frame.
+ */
+function spread(cluster: Built[], built: Built[]) {
+  const slots = lanesFor(cluster)
+  const rest = built.filter((e) => !cluster.includes(e)).map((e) => ({ id: e.l.id, pts: e.w.pts }))
+  const orders = cluster.length <= 4 ? permutations(cluster.length) : [cluster.map((_, n) => n)]
+  // a lane that shoves a wire into a block is never worth a saved crossing
+  const intoBlock = (pts: Pt[], e: Built) => cost(pts, e.obs) > cost(e.w.pts, e.obs) + LANE * 4
 
-      /*
-       * Which wire gets which lane decides whether they cross. Two wires leaving the same
-       * block and peeling off at different heights only stay apart if the one travelling
-       * furthest takes the lane nearest its source — put them the other way round and the
-       * shorter one has to cut across the longer one's corridor. Rather than encode that as a
-       * rule, try the orderings and keep the one that actually crosses least.
-       * ponytail: brute force, capped at 4 wires a cluster (24 orders); needs a real bus
-       * router only if clusters ever get big enough for that to show up in a frame.
-       */
-      const slots = cluster.map((_, n) => from + n * step)
-      const rest = built.filter((e) => !cluster.includes(e)).map((e) => ({ id: e.l.id, pts: e.w.pts }))
-      const orders = cluster.length <= 4 ? permutations(cluster.length) : [cluster.map((_, n) => n)]
-
-      let bestPts: Pt[][] | null = null
-      let bestScore = Infinity
-      for (const order of orders) {
-        const made = cluster.map((e, n) => wire(e.a, e.sa, e.b, e.sb, slots[order[n]]).pts)
-        // a lane that shoves a wire into a block is never worth a saved crossing
-        const intoBlock = made.some((pts, n) => {
-          const obs = obstaclesFor(cluster[n].l)
-          return cost(pts, obs) > cost(cluster[n].w.pts, obs) + LANE * 4
-        })
-        if (intoBlock) continue
-        const wires = [...rest, ...made.map((pts, n) => ({ id: cluster[n].l.id, pts }))]
-        let score = 0
-        for (const hops of bridges(wires).values()) score += hops.length
-        // tie-break on total length so a pointless reshuffle keeps the tidier layout
-        for (const pts of made) score += length(pts) / 100000
-        if (score < bestScore) { bestScore = score; bestPts = made }
-      }
-      if (bestPts) cluster.forEach((e, n) => { e.w = { ...e.w, pts: bestPts![n] } })
+  let bestPts: Pt[][] | null = null
+  let bestScore = Infinity
+  for (const order of orders) {
+    const made = cluster.map((e, n) => wire(e.a, e.sa, e.b, e.sb, slots[order[n]]).pts)
+    if (made.some((pts, n) => intoBlock(pts, cluster[n]))) continue
+    const s = score([...rest, ...made.map((pts, n) => ({ id: cluster[n].l.id, pts }))], made)
+    if (s < bestScore) {
+      bestScore = s
+      bestPts = made
     }
   }
+  const won = bestPts
+  if (won)
+    cluster.forEach((e, n) => {
+      e.w = { ...e.w, pts: won[n] }
+    })
+}
+
+/*
+ * Pull apart corridors that run alongside each other. Bucketing by `round(v / LANE)` missed
+ * pairs that straddled a bucket edge, and spreading symmetrically around the mean was undone
+ * by the clamp whenever a corridor could only move one way — two wires 5px apart stayed 5px
+ * apart. Cluster by real proximity instead, and spread in the direction they can actually go.
+ */
+function separate(built: Built[], axis: 'x' | 'y') {
+  const onAxis = built.filter((e) => e.w.corridor?.axis === axis).sort((p, q) => p.w.corridor!.v - q.w.corridor!.v)
+  for (let i = 0; i < onAxis.length; ) {
+    const cluster = clusterAt(onAxis, i)
+    i += cluster.length
+    if (cluster.length > 1) spread(cluster, built)
+  }
+}
+
+/** Plans every wire at once, so wires share the space between blocks instead of fighting over it. */
+export function planRoutes(rects: Map<string, Rect>, links: Link[]): Map<string, Route> {
+  const live = links.filter((l) => rects.has(l.source) && rects.has(l.target))
+  const obs = new Map(live.map((l) => [l.id, obstaclesFor(rects, l)]))
+  const chosen = new Map(
+    live.map((l) => [l.id, cheapestSides(rects.get(l.source)!, rects.get(l.target)!, obs.get(l.id)!)]),
+  )
+  const along = sockets(rects, live, chosen)
+
+  // build the wires, then pull apart any that ended up sharing a corridor
+  const built: Built[] = live.map((l) => {
+    const { sa, sb } = chosen.get(l.id)!
+    const a = sidePoint(rects.get(l.source)!, sa, along.get(l.id + '|a') ?? 0.5)
+    const b = sidePoint(rects.get(l.target)!, sb, along.get(l.id + '|b') ?? 0.5)
+    return { l, sa, sb, a, b, w: wire(a, sa, b, sb), obs: obs.get(l.id)! }
+  })
+  separate(built, 'x')
+  separate(built, 'y')
 
   const hops = bridges(built.map((e) => ({ id: e.l.id, pts: e.w.pts })))
-
-  const out = new Map<string, Route>()
-  for (const e of built) {
-    const pts = e.w.pts
-    out.set(e.l.id, {
-      sx: e.a.x, sy: e.a.y, tx: e.b.x, ty: e.b.y,
-      path: toPath(pts, hops.get(e.l.id)), len: length(pts),
-      ls: mark(pts, true), lt: mark(pts, false),
-    })
-  }
-  return out
+  const route = (e: Built): Route => ({
+    sx: e.a.x,
+    sy: e.a.y,
+    tx: e.b.x,
+    ty: e.b.y,
+    path: toPath(e.w.pts, hops.get(e.l.id)),
+    len: length(e.w.pts),
+    ls: mark(e.w.pts, true),
+    lt: mark(e.w.pts, false),
+  })
+  return new Map(built.map((e) => [e.l.id, route(e)]))
 }

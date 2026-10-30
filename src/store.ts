@@ -80,6 +80,16 @@ function removal(s: State, id: string): Partial<State> {
   }
 }
 
+/** Puts back what removal() took, exactly as it was. */
+function restore(s: State, r: NonNullable<State['lastRemoved']>): Partial<State> {
+  return {
+    added: s.added.includes(r.id) ? s.added : [...s.added, r.id],
+    creds: r.creds ? { ...s.creds, [r.id]: r.creds } : s.creds,
+    nodePos: r.pos ? { ...s.nodePos, [r.id]: r.pos } : s.nodePos,
+    lastRemoved: null,
+  }
+}
+
 export const useStack = create<State>()(
   persist(
     (set) => ({
@@ -106,17 +116,7 @@ export const useStack = create<State>()(
       confirmRemove: () => set((s) => (s.confirming ? { ...removal(s, s.confirming), confirming: null } : s)),
       cancelRemove: () => set({ confirming: null }),
 
-      undoRemove: () =>
-        set((s) => {
-          const r = s.lastRemoved
-          if (!r) return s
-          return {
-            added: s.added.includes(r.id) ? s.added : [...s.added, r.id],
-            creds: r.creds ? { ...s.creds, [r.id]: r.creds } : s.creds,
-            nodePos: r.pos ? { ...s.nodePos, [r.id]: r.pos } : s.nodePos,
-            lastRemoved: null,
-          }
-        }),
+      undoRemove: () => set((s) => (s.lastRemoved ? restore(s, s.lastRemoved) : s)),
       dismissUndo: () => set({ lastRemoved: null }),
 
       remove: (id) => set((s) => removal(s, id)),

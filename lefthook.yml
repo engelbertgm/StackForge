@@ -1,0 +1,12 @@
+pre-commit:
+  commands:
+    gitleaks:
+      run: gitleaks git --pre-commit --staged --redact --no-banner
+    biome:
+      glob: "*.{ts,tsx,js,css}"
+      run: pnpm exec biome check --no-errors-on-unmatched {staged_files}
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm exec commitlint --edit {1}

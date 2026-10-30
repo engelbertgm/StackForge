@@ -6,9 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "lint": "biome check .",
     "preview": "vite preview",
-    "check": "node --experimental-strip-types --test src/rules.test.ts src/catalog/catalog.test.ts src/routing.test.ts src/snap.test.ts"
+    "check": "node --experimental-strip-types --test src/rules.test.ts src/catalog/catalog.test.ts src/routing.test.ts src/snap.test.ts",
+    "test:responsive": "playwright test tests/responsive.spec.ts",
+    "format": "biome format --write .",
+    "typecheck": "tsc -b",
+    "knip": "knip",
+    "dup": "jscpd",
+    "prepare": "lefthook install"
   },
   "dependencies": {
     "@heroui/react": "^3.2.5",
@@ -19,14 +25,25 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
-    "oxlint": "^1.81.0",
+    "jscpd": "5.4.2",
+    "knip": "6.44.0",
+    "lefthook": "2.2.2",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "lefthook"
+    ]
   }
 }

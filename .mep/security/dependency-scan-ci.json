@@ -1,0 +1,14 @@
+{
+  "id": "dependency-scan-ci",
+  "result": "pass",
+  "files": [
+    ".github/workflows/ci.yml",
+    ".github/workflows/mep.yml",
+    "package.json",
+    "pnpm-lock.yaml"
+  ],
+  "notes": "mep.yml:30 runs 'pnpm audit --audit-level critical --prod' on PR and push to main (fails on critical); both workflows install with --frozen-lockfile (mep.yml:23, ci.yml:21). Local run of the same command: no known vulnerabilities. Note: mep.yml is still untracked; it only protects once committed and pushed.",
+  "hash": "e112e095e32d5ad12a6bdaf4ea8236244e80a0049f28d0de637d621e395db8b4",
+  "date": "2026-10-30",
+  "by": "mep-security"
+}

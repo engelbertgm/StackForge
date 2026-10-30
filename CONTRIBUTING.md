@@ -48,7 +48,7 @@ Run what CI runs:
 
 ```bash
 pnpm check    # rule engine, catalog integrity, wire router, snapping
-pnpm lint     # oxlint
+pnpm lint     # Biome: lint + formatting check
 pnpm build    # type-check and production build
 ```
 

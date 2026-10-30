@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { bridges, planRoutes, toPath, wire, type Link, type Rect } from './routing.ts'
+import { bridges, type Link, planRoutes, type Rect, toPath, wire } from './routing.ts'
 
 const card = (x: number, y: number, parent = 'group:g'): Rect => ({ x, y, w: 168, h: 62, parent })
 
@@ -9,7 +9,10 @@ const corners = (d: string): [number, number][] =>
   [...d.matchAll(/[MLQ]\s*(-?[\d.]+),(-?[\d.]+)/g)].map((m) => [Number(m[1]), Number(m[2])])
 
 test('two blocks stacked vertically get one straight wire, never an S', () => {
-  const rects = new Map<string, Rect>([['prisma', card(100, 100)], ['pg', card(100, 240)]])
+  const rects = new Map<string, Rect>([
+    ['prisma', card(100, 100)],
+    ['pg', card(100, 240)],
+  ])
   const routes = planRoutes(rects, [{ id: 'e1', source: 'pg', target: 'prisma' }])
   const r = routes.get('e1')!
   assert.equal(r.sx, r.tx, 'both ends share an x')
@@ -30,7 +33,8 @@ test('two wires between the same pair leave from different points', () => {
     { id: 'b', source: 'next', target: 'pg' },
   ]
   const r = planRoutes(rects, links)
-  const a = r.get('a')!, b = r.get('b')!
+  const a = r.get('a')!,
+    b = r.get('b')!
   assert.ok(a.sx !== b.sx || a.sy !== b.sy, 'both wires start at the same socket')
   assert.ok(a.tx !== b.tx || a.ty !== b.ty, 'both wires end at the same socket')
 })
@@ -85,32 +89,65 @@ test('two wires out of one block into stacked targets do not cross', () => {
     const pts = corners(routes.get(id)!.path)
     return pts.slice(1).map((p, i) => [pts[i], p] as const)
   }
-  let crossings = 0
-  for (const [a1, a2] of segs('a'))
-    for (const [b1, b2] of segs('b')) {
-      const aH = Math.abs(a1[1] - a2[1]) < 1, bV = Math.abs(b1[0] - b2[0]) < 1
-      if (!aH || !bV) continue
-      const x = b1[0], y = a1[1]
-      if (x > Math.min(a1[0], a2[0]) + 2 && x < Math.max(a1[0], a2[0]) - 2 &&
-          y > Math.min(b1[1], b2[1]) + 2 && y < Math.max(b1[1], b2[1]) - 2) crossings++
-    }
+  type Seg = readonly [[number, number], [number, number]]
+  // a horizontal run of one and a vertical run of the other, meeting strictly inside both
+  const between = (v: number, a: number, b: number) => v > Math.min(a, b) + 2 && v < Math.max(a, b) - 2
+  const cross = ([a1, a2]: Seg, [b1, b2]: Seg) =>
+    Math.abs(a1[1] - a2[1]) < 1 &&
+    Math.abs(b1[0] - b2[0]) < 1 &&
+    between(b1[0], a1[0], a2[0]) &&
+    between(a1[1], b1[1], b2[1])
+  const crossings = segs('a').flatMap((a) => segs('b').filter((b) => cross(a, b))).length
   assert.equal(crossings, 0, 'the two wires still cross each other')
 })
 
 test('a horizontal wire bridges over a vertical one it crosses', () => {
   const hits = bridges([
-    { id: 'h', pts: [{ x: 0, y: 50 }, { x: 200, y: 50 }] },
-    { id: 'v', pts: [{ x: 100, y: 0 }, { x: 100, y: 100 }] },
+    {
+      id: 'h',
+      pts: [
+        { x: 0, y: 50 },
+        { x: 200, y: 50 },
+      ],
+    },
+    {
+      id: 'v',
+      pts: [
+        { x: 100, y: 0 },
+        { x: 100, y: 100 },
+      ],
+    },
   ])
   assert.deepEqual(hits.get('h'), [{ x: 100, y: 50 }], 'horizontal wire got no hop')
   assert.equal(hits.get('v'), undefined, 'vertical wire should not also hop')
-  assert.match(toPath([{ x: 0, y: 50 }, { x: 200, y: 50 }], hits.get('h')), /A4 4 0 0 1 104,50/)
+  assert.match(
+    toPath(
+      [
+        { x: 0, y: 50 },
+        { x: 200, y: 50 },
+      ],
+      hits.get('h'),
+    ),
+    /A4 4 0 0 1 104,50/,
+  )
 })
 
 test('wires that only touch at a shared point get no bridge', () => {
   const hits = bridges([
-    { id: 'h', pts: [{ x: 0, y: 50 }, { x: 100, y: 50 }] },
-    { id: 'v', pts: [{ x: 100, y: 50 }, { x: 100, y: 150 }] },
+    {
+      id: 'h',
+      pts: [
+        { x: 0, y: 50 },
+        { x: 100, y: 50 },
+      ],
+    },
+    {
+      id: 'v',
+      pts: [
+        { x: 100, y: 50 },
+        { x: 100, y: 150 },
+      ],
+    },
   ])
   assert.equal(hits.size, 0)
 })
@@ -118,5 +155,8 @@ test('wires that only touch at a shared point get no bridge', () => {
 test('a wire that has to turn back does not cross the block it left', () => {
   // both ends leave rightwards, so the corridor must sit clear of both cards
   const w = wire({ x: 168, y: 130 }, 'right', { x: 168, y: 330 }, 'right')
-  assert.ok(w.pts.every((p) => p.x >= 168), 'wire re-enters the block it left')
+  assert.ok(
+    w.pts.every((p) => p.x >= 168),
+    'wire re-enters the block it left',
+  )
 })

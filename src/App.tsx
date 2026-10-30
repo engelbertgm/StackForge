@@ -1,28 +1,29 @@
 import {
   Background,
   Controls,
+  type Edge,
+  type EdgeTypes,
+  type InternalNode,
   MarkerType,
   MiniMap,
+  type Node,
+  type NodeTypes,
   ReactFlow,
   ReactFlowProvider,
-  ViewportPortal,
   useReactFlow,
   useStore,
   useStoreApi,
-  type Edge,
-  type EdgeTypes,
-  type Node,
-  type NodeTypes,
+  ViewportPortal,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { groupById, stackRules, techById } from './catalog'
 import { GhostNode, GroupNode, REL, RelEdge, TechNode } from './components/nodes'
 import { DeleteGuard, Drawer, Inspector, NeedsPanel, Palette, TopBar, UndoToast } from './components/panels'
-import { NODE_H, NODE_W, layout } from './layout'
-import { planRoutes, type Rect } from './routing'
-import { analyze } from './rules'
-import { snap, type Guide } from './snap'
+import { type Box, layout, NODE_H, NODE_W } from './layout'
+import { planRoutes, type Rect, type Route } from './routing'
+import { type Analysis, analyze } from './rules'
+import { type Guide, snap } from './snap'
 import { matchesHighlight, useStack } from './store'
 import type { Tech } from './types'
 
@@ -83,6 +84,73 @@ function AlignmentGuides({ guides }: { guides?: Guide[] }) {
   )
 }
 
+/** what the drag preview looks like: the size, colour and label of the thing being dragged */
+function ghostLook(id: string, boxes: Box[]) {
+  if (id.startsWith('group:')) {
+    const box = boxes.find((b) => `group:${b.groupId}` === id)
+    const group = box && groupById.get(box.groupId)
+    return box ? { parentId: undefined, w: box.w, h: box.h, color: group?.color, label: group?.name ?? '' } : null
+  }
+  const tech = techById.get(id)
+  if (!tech) return null
+  // a block's drag position is relative to its box, exactly like its resting position
+  return { parentId: `group:${tech.group}`, w: NODE_W, h: NODE_H, color: tech.color, label: tech.name }
+}
+
+const size = (m: InternalNode) => ({ w: m.measured.width ?? NODE_W, h: m.measured.height ?? NODE_H })
+
+/** what a dragged node may align against: its box-mates for a block, the other boxes for a box */
+function peersOf(lookup: Map<string, InternalNode>, n: Node) {
+  const isGroup = n.id.startsWith('group:')
+  const isPeer = (id: string, m: InternalNode) =>
+    id !== n.id && id !== GHOST_ID && isGroup === id.startsWith('group:') && (isGroup || m.parentId === n.parentId)
+  return [...lookup]
+    .filter(([id, m]) => isPeer(id, m))
+    .map(([, m]) => ({ x: m.internals.positionAbsolute.x, y: m.internals.positionAbsolute.y, ...size(m) }))
+}
+
+/**
+ * A snap must never push a block past the box edge React Flow already clamped it to.
+ * Where the clamp wins, that axis did not really align, so its guide has to go too.
+ */
+function clampToBox(
+  at: { x: number; y: number; guides: Guide[] },
+  me: { w: number; h: number },
+  box: { w: number; h: number },
+) {
+  const x = Math.min(Math.max(at.x, 0), box.w - me.w)
+  const y = Math.min(Math.max(at.y, 0), box.h - me.h)
+  const guides = at.guides.filter((g) => (g.axis === 'x' ? x === at.x : y === at.y))
+  return { x, y, guides }
+}
+
+const touches = (e: { source: string; target: string }, id: string | null) =>
+  !!id && (e.source === id || e.target === id)
+
+/** one relationship as a React Flow edge, faded when it is outside the selection or the filter */
+function relEdge(
+  e: Analysis['edges'][number],
+  selected: string | null,
+  passes: (t: Tech) => boolean,
+  route?: Route,
+): Edge {
+  const style = REL[e.rel]
+  const active = touches(e, selected)
+  const both = style.both || e.both
+  const bothEndsPass = passes(techById.get(e.source)!) && passes(techById.get(e.target)!)
+  const marker = { type: MarkerType.ArrowClosed, color: style.color, width: 16, height: 16 }
+  return {
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    type: 'rel',
+    markerEnd: marker,
+    markerStart: both ? marker : undefined,
+    zIndex: active ? 5 : 1,
+    data: { rel: e.rel, card: e.card, both, active, dimmed: (!!selected && !active) || !bothEndsPass, route },
+  }
+}
+
 function Canvas() {
   const { added, nodePos, groupPos, selected, highlight, fitTick, select, setNodePos, setGroupPos, requestRemove } =
     useStack()
@@ -100,9 +168,7 @@ function Canvas() {
   useLayoutEffect(() => {
     const el = canvasRef.current
     if (!el) return
-    const ro = new ResizeObserver(([e]) =>
-      setCanvasSize({ w: e.contentRect.width, h: e.contentRect.height }),
-    )
+    const ro = new ResizeObserver(([e]) => setCanvasSize({ w: e.contentRect.width, h: e.contentRect.height }))
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
@@ -176,32 +242,23 @@ function Canvas() {
    * the one node that actually changed each frame instead of all of them.
    */
   const nodesWithGhost = useMemo<Node[]>(() => {
-    if (!ghost) return nodes
-    const isGroup = ghost.id.startsWith('group:')
-    const box = isGroup ? boxes.find((b) => `group:${b.groupId}` === ghost.id) : undefined
-    const tech = isGroup ? undefined : techById.get(ghost.id)
-    if (isGroup ? !box : !tech) return nodes
-
-    const group = groupById.get(isGroup ? box!.groupId : tech!.group)
+    const look = ghost && ghostLook(ghost.id, boxes)
+    if (!ghost || !look) return nodes
     return [
       ...nodes,
       {
         id: GHOST_ID,
         type: 'ghost',
-        // a block's drag position is relative to its box, exactly like its resting position
-        parentId: isGroup ? undefined : `group:${tech!.group}`,
+        parentId: look.parentId,
         position: { x: ghost.x, y: ghost.y },
-        width: isGroup ? box!.w : NODE_W,
-        height: isGroup ? box!.h : NODE_H,
-        style: { width: isGroup ? box!.w : NODE_W, height: isGroup ? box!.h : NODE_H },
+        width: look.w,
+        height: look.h,
+        style: { width: look.w, height: look.h },
         draggable: false,
         selectable: false,
         /* above the cards, so the landing spot is never hidden behind one */
         zIndex: 6,
-        data: {
-          color: (isGroup ? group?.color : tech!.color) ?? '#8b93a1',
-          label: isGroup ? (group?.name ?? '') : tech!.name,
-        },
+        data: { color: look.color ?? '#8b93a1', label: look.label },
       },
     ]
   }, [nodes, ghost, boxes])
@@ -222,7 +279,8 @@ function Canvas() {
   const posKey = useStore((s) => {
     if (dragging) return 'dragging'
     let k = ''
-    for (const [id, n] of s.nodeLookup) k += `${id}:${n.internals.positionAbsolute.x},${n.internals.positionAbsolute.y};`
+    for (const [id, n] of s.nodeLookup)
+      k += `${id}:${n.internals.positionAbsolute.x},${n.internals.positionAbsolute.y};`
     return k
   })
   const routes = useMemo(() => {
@@ -256,67 +314,23 @@ function Canvas() {
 
       const { nodeLookup, transform } = store.getState()
       const self = nodeLookup.get(n.id)
-      if (!self) return raw
+      const peers = peersOf(nodeLookup, n)
+      if (!self || !peers.length) return raw
 
-      const isGroup = n.id.startsWith('group:')
       const parent = n.parentId ? nodeLookup.get(n.parentId) : undefined
       // a block's position is relative to its box, so snap in absolute space and convert back
       const origin = parent?.internals.positionAbsolute ?? { x: 0, y: 0 }
-      const size = (m: typeof self) => ({
-        w: m.measured.width ?? NODE_W,
-        h: m.measured.height ?? NODE_H,
-      })
-
-      const peers = []
-      for (const [id, m] of nodeLookup) {
-        if (id === n.id || id === GHOST_ID) continue
-        if (isGroup !== id.startsWith('group:')) continue
-        if (!isGroup && m.parentId !== n.parentId) continue
-        peers.push({ x: m.internals.positionAbsolute.x, y: m.internals.positionAbsolute.y, ...size(m) })
-      }
-      if (!peers.length) return raw
-
       const me = { x: origin.x + n.position.x, y: origin.y + n.position.y, ...size(self) }
       // tolerance in flow units, so the pull feels the same at every zoom level
       const hit = snap(me, peers, SNAP_PX / transform[2])
-
-      const x = hit.x - origin.x
-      const y = hit.y - origin.y
-      if (!parent) return { x, y, guides: hit.guides }
-
-      // A snap must never push a block past the box edge React Flow already clamped it to.
-      // Where the clamp wins, that axis did not really align, so its guide has to go too.
-      const box = size(parent)
-      const cx = Math.min(Math.max(x, 0), box.w - me.w)
-      const cy = Math.min(Math.max(y, 0), box.h - me.h)
-      const guides = hit.guides.filter((g) => (g.axis === 'x' ? cx === x : cy === y))
-      return { x: cx, y: cy, guides }
+      const moved = { x: hit.x - origin.x, y: hit.y - origin.y, guides: hit.guides }
+      return parent ? clampToBox(moved, me, size(parent)) : moved
     },
     [store],
   )
 
   const edges = useMemo<Edge[]>(
-    () =>
-      rel.map((e) => {
-        const style = REL[e.rel]
-        const active = !!selected && (e.source === selected || e.target === selected)
-        const bothEndsPass = matchesFilter(techById.get(e.source)!) && matchesFilter(techById.get(e.target)!)
-        const marker = { type: MarkerType.ArrowClosed, color: style.color, width: 16, height: 16 }
-        return {
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          type: 'rel',
-          markerEnd: marker,
-          markerStart: style.both || e.both ? marker : undefined,
-          zIndex: active ? 5 : 1,
-          data: {
-            rel: e.rel, card: e.card, both: style.both || e.both, active,
-            dimmed: (!!selected && !active) || !bothEndsPass,
-            route: routes.get(e.id),
-          },
-        }
-      }),
+    () => rel.map((e) => relEdge(e, selected, matchesFilter, routes.get(e.id))),
     [rel, selected, highlight, routes],
   )
 
@@ -341,84 +355,91 @@ function Canvas() {
       <TopBar problems={problems} />
 
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-        <Palette onBlocked={(m) => { setToast(m); setTimeout(() => setToast(null), 3500) }} />
+        <Palette
+          onBlocked={(m) => {
+            setToast(m)
+            setTimeout(() => setToast(null), 3500)
+          }}
+        />
 
         {/* the canvas owns its own box: the strip below is a sibling, not an overlay, so
             the measured height is the height that is actually visible and fitView lands right */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <main ref={canvasRef} className="stack-canvas relative min-h-0 min-w-0 flex-1 overflow-hidden">
-          {!added.length && (
-            <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center text-center text-white/35">
-              <div>
-                <div className="text-[15px] font-semibold text-white/60">Add a technology to start</div>
-                <div className="mt-1 text-[12px]">Its box appears on its own. Click any block to trace what it connects to.</div>
+          <main ref={canvasRef} className="stack-canvas relative min-h-0 min-w-0 flex-1 overflow-hidden">
+            {!added.length && (
+              <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center text-center text-white/35">
+                <div>
+                  <div className="text-[15px] font-semibold text-white/60">Add a technology to start</div>
+                  <div className="mt-1 text-[12px]">
+                    Its box appears on its own. Click any block to trace what it connects to.
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <ReactFlow
-            className={dragging ? 'is-dragging' : undefined}
-            nodes={nodesWithGhost}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            onNodeClick={(_, n) => !n.id.startsWith('group:') && select(n.id)}
-            onPaneClick={() => select(null)}
-            /* n.position is the position the block *would* take, already clamped to its box */
-            onNodeDragStart={(e, n) => setGhost({ id: n.id, ...resolveDrag(n, e.altKey) })}
-            onNodeDrag={(e, n) => setGhost({ id: n.id, ...resolveDrag(n, e.altKey) })}
-            onNodeDragStop={(e, n) => {
-              setGhost(null)
-              // resolve once more rather than trusting state: same inputs, same answer, and
-              // the block lands exactly where the ghost was standing
-              const { x, y } = resolveDrag(n, e.altKey)
-              if (n.id.startsWith('group:')) setGroupPos(n.id.slice(6), { x, y })
-              else setNodePos(n.id, { x, y })
-            }}
-            nodesConnectable={false}
-            proOptions={{ hideAttribution: true }}
-            fitView
-            minZoom={0.15}
-          >
-            {/* the boxes' own extent, so a re-column refits even when the pane size did not change */}
-            <AlignmentGuides guides={ghost?.guides} />
-            <FitOnDemand tick={`${fitTick}|${boxes.map((b) => `${b.x},${b.y},${b.w},${b.h}`).join(';')}`} />
-            <Background color="#212631" gap={26} size={1} />
-            <Controls showInteractive={false} />
-            <MiniMap
-              pannable
-              zoomable
-              maskColor="rgba(0,0,0,0.7)"
-              nodeColor={(n) =>
-                n.id.startsWith('group:')
-                  ? (groupById.get(n.id.slice(6))?.color ?? '#333') + '55'
-                  : techById.get(n.id)?.color ?? '#666'
-              }
-              style={{ background: '#0d1014' }}
-            />
-          </ReactFlow>
+            <ReactFlow
+              className={dragging ? 'is-dragging' : undefined}
+              nodes={nodesWithGhost}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              onNodeClick={(_, n) => !n.id.startsWith('group:') && select(n.id)}
+              onPaneClick={() => select(null)}
+              /* n.position is the position the block *would* take, already clamped to its box */
+              onNodeDragStart={(e, n) => setGhost({ id: n.id, ...resolveDrag(n, e.altKey) })}
+              onNodeDrag={(e, n) => setGhost({ id: n.id, ...resolveDrag(n, e.altKey) })}
+              onNodeDragStop={(e, n) => {
+                setGhost(null)
+                // resolve once more rather than trusting state: same inputs, same answer, and
+                // the block lands exactly where the ghost was standing
+                const { x, y } = resolveDrag(n, e.altKey)
+                if (n.id.startsWith('group:')) setGroupPos(n.id.slice(6), { x, y })
+                else setNodePos(n.id, { x, y })
+              }}
+              nodesConnectable={false}
+              proOptions={{ hideAttribution: true }}
+              fitView
+              minZoom={0.15}
+            >
+              {/* the boxes' own extent, so a re-column refits even when the pane size did not change */}
+              <AlignmentGuides guides={ghost?.guides} />
+              <FitOnDemand tick={`${fitTick}|${boxes.map((b) => `${b.x},${b.y},${b.w},${b.h}`).join(';')}`} />
+              <Background color="#212631" gap={26} size={1} />
+              <Controls showInteractive={false} />
+              <MiniMap
+                pannable
+                zoomable
+                maskColor="rgba(0,0,0,0.7)"
+                nodeColor={(n) =>
+                  n.id.startsWith('group:')
+                    ? (groupById.get(n.id.slice(6))?.color ?? '#333') + '55'
+                    : (techById.get(n.id)?.color ?? '#666')
+                }
+                style={{ background: '#0d1014' }}
+              />
+            </ReactFlow>
 
-          <NeedsPanel analysis={analysis} />
-          <UndoToast />
-          <DeleteGuard />
+            <NeedsPanel analysis={analysis} />
+            <UndoToast />
+            <DeleteGuard />
 
-          {selectedTech && (
-            <div className="absolute right-0 top-0 bottom-0 z-30 flex">
-              <Drawer tech={selectedTech} problems={problems.filter((p) => p.techId === selectedTech.id)} />
-            </div>
-          )}
+            {selectedTech && (
+              <div className="absolute right-0 top-0 bottom-0 z-30 flex">
+                <Drawer tech={selectedTech} problems={problems.filter((p) => p.techId === selectedTech.id)} />
+              </div>
+            )}
 
-          {toast && (
-            <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-lg border border-red-500/50 bg-red-500/15 px-4 py-2 text-[12px] text-red-200 backdrop-blur">
-              {toast}
-            </div>
-          )}
-        </main>
+            {toast && (
+              <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-lg border border-red-500/50 bg-red-500/15 px-4 py-2 text-[12px] text-red-200 backdrop-blur">
+                {toast}
+              </div>
+            )}
+          </main>
 
-        <Inspector
-          tech={hovered ? techById.get(hovered) : undefined}
-          problems={hovered ? problems.filter((p) => p.techId === hovered) : []}
-        />
+          <Inspector
+            tech={hovered ? techById.get(hovered) : undefined}
+            problems={hovered ? problems.filter((p) => p.techId === hovered) : []}
+          />
         </div>
       </div>
     </div>

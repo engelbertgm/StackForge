@@ -17,18 +17,19 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { allLangs, allTags, builds, groups, techById, techs } from '../catalog'
 import { decryptSecret, encryptSecret } from '../crypto'
-import { blockedBy, fixesFor } from '../rules'
-import { highlightChip, matchesHighlight, useStack, type Highlight } from '../store'
 import type { Analysis } from '../rules'
-import type { Problem, Rel, Tech } from '../types'
+import { blockedBy, fixesFor } from '../rules'
+import { type Highlight, highlightChip, matchesHighlight, useStack } from '../store'
+import type { Group, Problem, Rel, Tech } from '../types'
 import { REL } from './nodes'
 
 /* ---------- left palette: collapsible boxes, sections visible inside ---------- */
 
+/** Left sidebar: searchable catalog grouped by box; click to add or remove a technology. */
 export function Palette({ onBlocked }: { onBlocked: (msg: string) => void }) {
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<Record<string, boolean>>({})
-  const { added, add, requestRemove, highlight } = useStack()
+  const { added } = useStack()
   const selected = useMemo(() => added.map((id) => techById.get(id)!).filter(Boolean), [added])
 
   const needle = q.trim().toLowerCase()
@@ -68,85 +69,129 @@ export function Palette({ onBlocked }: { onBlocked: (msg: string) => void }) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
-        {groups.map((g) => {
-          const mine = matches.filter((t) => t.group === g.id)
-          if (!mine.length) return null
-          // searching forces everything open, otherwise respect the toggle
-          const isOpen = needle ? true : (open[g.id] ?? false)
-          const onCount = mine.filter((t) => added.includes(t.id)).length
-          // how much of this box the active filter covers, so a closed box still says something
-          const hits = highlight ? mine.filter((t) => matchesHighlight(t, highlight)).length : null
-
-          return (
-            <div key={g.id} className="mb-1">
-              <button
-                onClick={() => setOpen((o) => ({ ...o, [g.id]: !isOpen }))}
-                className={`flex w-full items-center gap-1.5 rounded px-1 py-1.5 text-left hover:bg-white/5 ${
-                  hits === 0 ? 'opacity-40' : ''
-                }`}
-              >
-                <span className={`text-[9px] text-white/40 transition-transform ${isOpen ? 'rotate-90' : ''}`}>▶</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: g.color }}>
-                  {g.name}
-                </span>
-                {hits !== null && (
-                  <span className={`text-[9px] ${hits ? 'text-cyan-300' : 'text-white/20'}`}>({hits})</span>
-                )}
-                <span className="ml-auto text-[9px] text-white/25">
-                  {onCount ? `${onCount}/${mine.length}` : mine.length}
-                </span>
-              </button>
-
-              {isOpen &&
-                g.sections.map((section) => {
-                  const items = mine.filter((t) => t.section === section)
-                  if (!items.length) return null
-                  return (
-                    <div key={section} className="mb-1.5 ml-3 border-l border-white/[0.07] pl-2">
-                      <div className="py-0.5 text-[9px] uppercase tracking-wider text-white/25">{section}</div>
-                      {items.map((t) => {
-                        const on = added.includes(t.id)
-                        const reason = on ? null : blockedBy(t, selected)
-                        const hit = !!highlight && matchesHighlight(t, highlight)
-                        const chip = highlightChip(t, highlight)
-                        return (
-                          <button
-                            key={t.id}
-                            title={reason ?? t.desc}
-                            onClick={() => {
-                              if (on) return requestRemove(t.id)
-                              if (reason) return onBlocked(reason)
-                              add(t.id)
-                            }}
-                            className={`flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-[12px] ${
-                              reason
-                                ? 'cursor-not-allowed text-white/25 line-through'
-                                : on
-                                  ? 'bg-white/10 text-white'
-                                  : 'text-white/70 hover:bg-white/5'
-                            } ${hit ? 'ring-1 ring-inset ring-cyan-400/40' : highlight ? 'opacity-45' : ''}`}
-                          >
-                            <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: t.color }} />
-                            <span className="truncate">{t.name}</span>
-                            <span className="ml-auto flex shrink-0 items-center gap-1">
-                              {chip && (
-                                <span className="rounded bg-cyan-400/15 px-1 text-[9px] font-semibold text-cyan-300">
-                                  {chip}
-                                </span>
-                              )}
-                              {on && <span className="text-[10px] text-white/40">on</span>}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )
-                })}
-            </div>
-          )
-        })}
+        {groups.map((g) => (
+          <PaletteGroup
+            key={g.id}
+            group={g}
+            mine={matches.filter((t) => t.group === g.id)}
+            // searching forces everything open, otherwise respect the toggle
+            isOpen={!!needle || (open[g.id] ?? false)}
+            onToggle={(isOpen) => setOpen((o) => ({ ...o, [g.id]: !isOpen }))}
+            onBlocked={onBlocked}
+            selected={selected}
+          />
+        ))}
       </div>
     </aside>
+  )
+}
+
+interface PaletteGroupProps {
+  group: Group
+  /** this box's techs that pass the search */
+  mine: Tech[]
+  isOpen: boolean
+  onToggle: (isOpen: boolean) => void
+  onBlocked: (msg: string) => void
+  /** techs already on the canvas */
+  selected: Tech[]
+}
+
+function PaletteGroup({ group: g, mine, isOpen, onToggle, onBlocked, selected }: PaletteGroupProps) {
+  const { added, highlight } = useStack()
+  if (!mine.length) return null
+  const onCount = mine.filter((t) => added.includes(t.id)).length
+  // how much of this box the active filter covers, so a closed box still says something
+  const hits = highlight ? mine.filter((t) => matchesHighlight(t, highlight)).length : null
+
+  return (
+    <div className="mb-1">
+      <button
+        type="button"
+        onClick={() => onToggle(isOpen)}
+        className={`flex w-full items-center gap-1.5 rounded px-1 py-1.5 text-left hover:bg-white/5 ${
+          hits === 0 ? 'opacity-40' : ''
+        }`}
+      >
+        <span className={`text-[9px] text-white/40 transition-transform ${isOpen ? 'rotate-90' : ''}`}>▶</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: g.color }}>
+          {g.name}
+        </span>
+        {hits !== null && <span className={`text-[9px] ${hits ? 'text-cyan-300' : 'text-white/20'}`}>({hits})</span>}
+        <span className="ml-auto text-[9px] text-white/25">{onCount ? `${onCount}/${mine.length}` : mine.length}</span>
+      </button>
+
+      {isOpen &&
+        g.sections.map((section) => (
+          <PaletteSection
+            key={section}
+            section={section}
+            items={mine.filter((t) => t.section === section)}
+            onBlocked={onBlocked}
+            selected={selected}
+          />
+        ))}
+    </div>
+  )
+}
+
+function PaletteSection({
+  section,
+  items,
+  onBlocked,
+  selected,
+}: {
+  section: string
+  items: Tech[]
+  onBlocked: (msg: string) => void
+  selected: Tech[]
+}) {
+  if (!items.length) return null
+  return (
+    <div className="mb-1.5 ml-3 border-l border-white/[0.07] pl-2">
+      <div className="py-0.5 text-[9px] uppercase tracking-wider text-white/25">{section}</div>
+      {items.map((t) => (
+        <PaletteItem key={t.id} t={t} onBlocked={onBlocked} selected={selected} />
+      ))}
+    </div>
+  )
+}
+
+const itemTone = (reason: string | null, on: boolean) => {
+  if (reason) return 'cursor-not-allowed text-white/25 line-through'
+  return on ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5'
+}
+
+const itemRing = (hit: boolean, highlight: Highlight) => {
+  if (hit) return 'ring-1 ring-inset ring-cyan-400/40'
+  return highlight ? 'opacity-45' : ''
+}
+
+function PaletteItem({ t, onBlocked, selected }: { t: Tech; onBlocked: (msg: string) => void; selected: Tech[] }) {
+  const { added, add, requestRemove, highlight } = useStack()
+  const on = added.includes(t.id)
+  const reason = on ? null : blockedBy(t, selected)
+  const hit = !!highlight && matchesHighlight(t, highlight)
+  const chip = highlightChip(t, highlight)
+  const press = () => {
+    if (on) return requestRemove(t.id)
+    if (reason) return onBlocked(reason)
+    add(t.id)
+  }
+  return (
+    <button
+      type="button"
+      title={reason ?? t.desc}
+      onClick={press}
+      className={`flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-[12px] ${itemTone(reason, on)} ${itemRing(hit, highlight)}`}
+    >
+      <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: t.color }} />
+      <span className="truncate">{t.name}</span>
+      <span className="ml-auto flex shrink-0 items-center gap-1">
+        {chip && <span className="rounded bg-cyan-400/15 px-1 text-[9px] font-semibold text-cyan-300">{chip}</span>}
+        {on && <span className="text-[10px] text-white/40">on</span>}
+      </span>
+    </button>
   )
 }
 
@@ -154,7 +199,10 @@ export function Palette({ onBlocked }: { onBlocked: (msg: string) => void }) {
 
 const LANG_COLUMNS: { title: string; items: string[] }[] = [
   { title: 'Web', items: ['ts', 'js', 'css', 'html'] },
-  { title: 'Backend', items: ['py', 'go', 'rust', 'java', 'kotlin', 'csharp', 'php', 'ruby', 'elixir', 'erlang', 'groovy'] },
+  {
+    title: 'Backend',
+    items: ['py', 'go', 'rust', 'java', 'kotlin', 'csharp', 'php', 'ruby', 'elixir', 'erlang', 'groovy'],
+  },
   { title: 'Native & Mobile', items: ['swift', 'dart', 'cpp'] },
   { title: 'Data & Query', items: ['sql', 'dax', 'proto', 'apex', 'abap', 'liquid'] },
   { title: 'Config & Markup', items: ['yaml', 'hcl', 'json', 'md', 'xml', 'bash', 'none'] },
@@ -162,7 +210,10 @@ const LANG_COLUMNS: { title: string; items: string[] }[] = [
 
 const TAG_COLUMNS: { title: string; items: string[] }[] = [
   { title: 'Platform', items: ['web', 'mobile', 'desktop', 'edge', 'embedded', 'systems', 'serverless'] },
-  { title: 'Discipline', items: ['backend', 'data', 'ml', 'ai', 'design', 'a11y', 'pm', 'dev', 'devtool', 'infra', 'ci', 'research'] },
+  {
+    title: 'Discipline',
+    items: ['backend', 'data', 'ml', 'ai', 'design', 'a11y', 'pm', 'dev', 'devtool', 'infra', 'ci', 'research'],
+  },
   { title: 'Delivery', items: ['cloud', 'saas', 'hosted', 'selfhost', 'oss', 'privacy'] },
   { title: 'Vendor', items: ['aws', 'google', 'microsoft', 'atlassian', 'enterprise'] },
   { title: 'Other', items: ['protocol', 'unix'] },
@@ -172,7 +223,9 @@ const TAG_COLUMNS: { title: string; items: string[] }[] = [
 function withLeftovers(columns: { title: string; items: string[] }[], all: string[]) {
   const known = new Set(columns.flatMap((c) => c.items))
   const rest = all.filter((v) => !known.has(v))
-  const cols = columns.map((c) => ({ ...c, items: c.items.filter((i) => all.includes(i)) })).filter((c) => c.items.length)
+  const cols = columns
+    .map((c) => ({ ...c, items: c.items.filter((i) => all.includes(i)) }))
+    .filter((c) => c.items.length)
   return rest.length ? [...cols, { title: 'Uncategorised', items: rest }] : cols
 }
 
@@ -204,7 +257,7 @@ function FilterMenu({
         size="sm"
         variant={active ? 'secondary' : 'ghost'}
         className="shrink-0 whitespace-nowrap"
-        render={(props) => <button {...props} />}
+        render={(props) => <button type="button" {...props} />}
       >
         <span className="text-[9px] uppercase tracking-wider text-muted">{label}</span>
         <span className="ml-1.5">{active ? (upper ? active.toUpperCase() : active) : 'all'}</span>
@@ -261,31 +314,31 @@ function BuildFilter({ highlight, setHighlight }: { highlight: Highlight; setHig
   const value = highlight?.kind === 'build' ? highlight.value : null
   return (
     <div className="flex shrink-0 items-center gap-1.5">
-    <span className="text-[9px] uppercase tracking-wider text-muted">Build</span>
-    <Select
-      aria-label="Build"
-      variant="secondary"
-      placeholder="anything"
-      value={value}
-      onChange={(v) => setHighlight(v ? { kind: 'build', value: String(v) } : null)}
-      className="shrink-0"
-    >
-      <Select.Trigger className={value ? 'border-cyan-400/60' : undefined}>
-        <Select.Value />
-        <Select.ClearButton />
-        <Select.Indicator />
-      </Select.Trigger>
-      <Select.Popover>
-        <ListBox>
-          {builds.map((b) => (
-            <ListBox.Item key={b.id} id={b.id} textValue={b.name}>
-              <Label>{b.name}</Label>
-              <Description>{b.desc}</Description>
-            </ListBox.Item>
-          ))}
-        </ListBox>
-      </Select.Popover>
-    </Select>
+      <span className="text-[9px] uppercase tracking-wider text-muted">Build</span>
+      <Select
+        aria-label="Build"
+        variant="secondary"
+        placeholder="anything"
+        value={value}
+        onChange={(v) => setHighlight(v ? { kind: 'build', value: String(v) } : null)}
+        className="shrink-0"
+      >
+        <Select.Trigger className={value ? 'border-cyan-400/60' : undefined}>
+          <Select.Value />
+          <Select.ClearButton />
+          <Select.Indicator />
+        </Select.Trigger>
+        <Select.Popover>
+          <ListBox>
+            {builds.map((b) => (
+              <ListBox.Item key={b.id} id={b.id} textValue={b.name}>
+                <Label>{b.name}</Label>
+                <Description>{b.desc}</Description>
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        </Select.Popover>
+      </Select>
     </div>
   )
 }
@@ -295,33 +348,36 @@ function BoxFilter({ highlight, setHighlight }: { highlight: Highlight; setHighl
   const value = highlight?.kind === 'group' ? highlight.value : null
   return (
     <div className="flex shrink-0 items-center gap-1.5">
-    <span className="text-[9px] uppercase tracking-wider text-muted">Box</span>
-    <Select
-      aria-label="Box"
-      variant="secondary"
-      placeholder="all"
-      value={value}
-      onChange={(v) => setHighlight(v ? { kind: 'group', value: String(v) } : null)}
-      className="shrink-0"
-    >
-      <Select.Trigger className={value ? 'border-white/50' : undefined}>
-        <Select.Value />
-        <Select.ClearButton />
-        <Select.Indicator />
-      </Select.Trigger>
-      <Select.Popover>
-        <ListBox>
-          {groups.map((g) => (
-            <ListBox.Item key={g.id} id={g.id} textValue={g.name}>
-              <Label>
-                <span className="mr-2 inline-block h-2 w-2 rounded-full align-middle" style={{ background: g.color }} />
-                {g.name}
-              </Label>
-            </ListBox.Item>
-          ))}
-        </ListBox>
-      </Select.Popover>
-    </Select>
+      <span className="text-[9px] uppercase tracking-wider text-muted">Box</span>
+      <Select
+        aria-label="Box"
+        variant="secondary"
+        placeholder="all"
+        value={value}
+        onChange={(v) => setHighlight(v ? { kind: 'group', value: String(v) } : null)}
+        className="shrink-0"
+      >
+        <Select.Trigger className={value ? 'border-white/50' : undefined}>
+          <Select.Value />
+          <Select.ClearButton />
+          <Select.Indicator />
+        </Select.Trigger>
+        <Select.Popover>
+          <ListBox>
+            {groups.map((g) => (
+              <ListBox.Item key={g.id} id={g.id} textValue={g.name}>
+                <Label>
+                  <span
+                    className="mr-2 inline-block h-2 w-2 rounded-full align-middle"
+                    style={{ background: g.color }}
+                  />
+                  {g.name}
+                </Label>
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        </Select.Popover>
+      </Select>
     </div>
   )
 }
@@ -332,11 +388,22 @@ function Filters({ highlight, setHighlight }: { highlight: Highlight; setHighlig
   return (
     <div className="flex min-w-0 items-center gap-2">
       <BuildFilter highlight={highlight} setHighlight={setHighlight} />
-      <FilterMenu kind="lang" label="Language" columns={langCols} upper highlight={highlight} setHighlight={setHighlight} />
+      <FilterMenu
+        kind="lang"
+        label="Language"
+        columns={langCols}
+        upper
+        highlight={highlight}
+        setHighlight={setHighlight}
+      />
       <FilterMenu kind="tag" label="Ecosystem" columns={tagCols} highlight={highlight} setHighlight={setHighlight} />
       <BoxFilter highlight={highlight} setHighlight={setHighlight} />
       {highlight && (
-        <button onClick={() => setHighlight(null)} className="whitespace-nowrap text-[10px] text-white/35 hover:text-white">
+        <button
+          type="button"
+          onClick={() => setHighlight(null)}
+          className="whitespace-nowrap text-[10px] text-white/35 hover:text-white"
+        >
           clear
         </button>
       )}
@@ -346,6 +413,7 @@ function Filters({ highlight, setHighlight }: { highlight: Highlight; setHighlig
 
 /* ---------- top bar ---------- */
 
+/** Header with stack status, the highlight filter menu, builds, import/export and clear. */
 export function TopBar({ problems }: { problems: Problem[] }) {
   const { highlight, setHighlight, added, nodePos, groupPos, creds, clear, load, resetPositions } = useStack()
   const errors = problems.filter((p) => p.severity === 'error').length
@@ -380,12 +448,28 @@ export function TopBar({ problems }: { problems: Problem[] }) {
       <Filters highlight={highlight} setHighlight={setHighlight} />
 
       <div className="ml-auto flex shrink-0 items-center gap-2 text-[11px]">
-        {errors > 0 && <Chip color="danger" size="sm">{errors} blocking</Chip>}
-        {warns > 0 && <Chip color="warning" size="sm">{warns} warning</Chip>}
-        {!problems.length && added.length > 0 && <Chip color="success" size="sm">stack is coherent</Chip>}
+        {errors > 0 && (
+          <Chip color="danger" size="sm">
+            {errors} blocking
+          </Chip>
+        )}
+        {warns > 0 && (
+          <Chip color="warning" size="sm">
+            {warns} warning
+          </Chip>
+        )}
+        {!problems.length && added.length > 0 && (
+          <Chip color="success" size="sm">
+            stack is coherent
+          </Chip>
+        )}
 
-        <Button size="sm" variant="ghost" onPress={resetPositions}>Re-arrange</Button>
-        <Button size="sm" variant="ghost" onPress={exportJson}>Export</Button>
+        <Button size="sm" variant="ghost" onPress={resetPositions}>
+          Re-arrange
+        </Button>
+        <Button size="sm" variant="ghost" onPress={exportJson}>
+          Export
+        </Button>
         {/* a file input needs a real label around it, so this one keeps the button styling
             rather than the Button component */}
         <label className="inline-flex h-8 cursor-pointer items-center rounded-lg px-3 text-sm text-muted hover:bg-default hover:text-foreground">
@@ -425,8 +509,16 @@ export function TopBar({ problems }: { problems: Problem[] }) {
                 <p className="mt-2 text-muted">Export first if you want to keep this stack.</p>
               </AlertDialog.Body>
               <AlertDialog.Footer>
-                <Button variant="tertiary" onPress={() => setConfirmingClear(false)}>Cancel</Button>
-                <Button variant="danger" onPress={() => { clear(); setConfirmingClear(false) }}>
+                <Button variant="tertiary" onPress={() => setConfirmingClear(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  onPress={() => {
+                    clear()
+                    setConfirmingClear(false)
+                  }}
+                >
                   Clear everything
                 </Button>
               </AlertDialog.Footer>
@@ -440,6 +532,7 @@ export function TopBar({ problems }: { problems: Problem[] }) {
 
 /* ---------- what the stack still needs, and what would fix it ---------- */
 
+/** Lists what the stack is still missing and the technologies that would fill each gap. */
 export function NeedsPanel({ analysis }: { analysis: Analysis }) {
   const { added, add } = useStack()
   const [open, setOpen] = useState(true)
@@ -458,7 +551,11 @@ export function NeedsPanel({ analysis }: { analysis: Analysis }) {
 
   return (
     <div className="absolute right-3 top-3 z-10 w-72 rounded-lg border border-amber-500/25 bg-[#12161c]/95 text-[11px] shadow-2xl backdrop-blur">
-      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 px-3 py-2 text-left">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-2 px-3 py-2 text-left"
+      >
         <span className="text-[9px] text-white/40">{open ? '▼' : '▶'}</span>
         <span className="font-bold uppercase tracking-wider text-amber-300">Needed / recommended</span>
         <span className="ml-auto rounded bg-amber-500/20 px-1.5 text-amber-200">{suggestions.length}</span>
@@ -475,6 +572,7 @@ export function NeedsPanel({ analysis }: { analysis: Analysis }) {
               <div className="mt-1 flex flex-wrap gap-1">
                 {s.fixes.map((f) => (
                   <button
+                    type="button"
                     key={f.id}
                     onClick={() => add(f.id)}
                     title={f.desc}
@@ -495,12 +593,18 @@ export function NeedsPanel({ analysis }: { analysis: Analysis }) {
 
 /* ---------- delete guard + undo ---------- */
 
+/** Asks before removing a block that has account details saved on it. */
 export function DeleteGuard() {
   const { confirming, confirmRemove, cancelRemove, creds } = useStack()
   if (!confirming) return null
   const tech = techById.get(confirming)
   const c = creds[confirming] ?? {}
-  const filled = [c.url && 'a console URL', c.username && 'a username', c.secret && 'a saved password', c.notes && 'notes']
+  const filled = [
+    c.url && 'a console URL',
+    c.username && 'a username',
+    c.secret && 'a saved password',
+    c.notes && 'notes',
+  ]
     .filter(Boolean)
     .join(', ')
 
@@ -516,8 +620,12 @@ export function DeleteGuard() {
             <p>This block has {filled} saved on it. Removing it discards that too.</p>
           </AlertDialog.Body>
           <AlertDialog.Footer>
-            <Button variant="tertiary" onPress={cancelRemove}>Cancel</Button>
-            <Button variant="danger" onPress={confirmRemove}>Remove</Button>
+            <Button variant="tertiary" onPress={cancelRemove}>
+              Cancel
+            </Button>
+            <Button variant="danger" onPress={confirmRemove}>
+              Remove
+            </Button>
           </AlertDialog.Footer>
         </AlertDialog.Dialog>
       </AlertDialog.Container>
@@ -525,6 +633,7 @@ export function DeleteGuard() {
   )
 }
 
+/** Offers to put back the block that was just removed. */
 export function UndoToast() {
   const { lastRemoved, undoRemove, dismissUndo } = useStack()
 
@@ -538,14 +647,19 @@ export function UndoToast() {
   return (
     <div className="absolute bottom-16 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-lg border border-white/15 bg-[#12161c] px-4 py-2 text-[12px] shadow-2xl">
       <span className="text-white/70">Removed {techById.get(lastRemoved.id)?.name ?? lastRemoved.id}</span>
-      <button onClick={undoRemove} className="font-semibold text-cyan-300 hover:text-cyan-200">Undo</button>
-      <button onClick={dismissUndo} className="text-white/30 hover:text-white">✕</button>
+      <button type="button" onClick={undoRemove} className="font-semibold text-cyan-300 hover:text-cyan-200">
+        Undo
+      </button>
+      <button type="button" onClick={dismissUndo} className="text-white/30 hover:text-white">
+        ✕
+      </button>
     </div>
   )
 }
 
 /* ---------- hovering a block fills this strip instead of covering its neighbours ---------- */
 
+/** Bottom strip describing the hovered block, so a tooltip never covers its neighbours. */
 export function Inspector({ tech, problems }: { tech?: Tech; problems: Problem[] }) {
   return (
     <div className="pointer-events-none flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 bg-[#0d1014] px-4 py-1.5 text-[11px]">
@@ -583,14 +697,29 @@ export function Inspector({ tech, problems }: { tech?: Tech; problems: Problem[]
 /** The legend. Docked in the bottom bar so it is always on screen and never covers a block. */
 function LegendRow() {
   // one per colour on the canvas; siblings sharing a colour (hosts, syncs, tracks, builds) ride along
-  const shown: Rel[] = ['requires', 'consumes', 'queries', 'deploys', 'automates', 'extends', 'tests', 'styles', 'types', 'monitors', 'conflicts']
+  const shown: Rel[] = [
+    'requires',
+    'consumes',
+    'queries',
+    'deploys',
+    'automates',
+    'extends',
+    'tests',
+    'styles',
+    'types',
+    'monitors',
+    'conflicts',
+  ]
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-0.5 border-l border-white/10 pl-4">
       {shown.map((r) => (
         <span key={r} className="flex items-center gap-1.5 whitespace-nowrap">
-          <svg width="20" height="6" className="shrink-0">
+          <svg width="20" height="6" className="shrink-0" aria-hidden="true">
             <line
-              x1="0" y1="3" x2="20" y2="3"
+              x1="0"
+              y1="3"
+              x2="20"
+              y2="3"
               stroke={REL[r].color}
               strokeWidth="2"
               strokeDasharray={REL[r].dash ? '4 3' : undefined}
@@ -606,8 +735,114 @@ function LegendRow() {
 
 /* ---------- right drawer ---------- */
 
+const NOTE_TONE: Record<Problem['severity'], string> = {
+  error: 'border-red-500/40 bg-red-500/10 text-red-300',
+  warn: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
+}
+
+/** a titled row of capability chips; renders nothing when there are none */
+function ChipList({
+  title,
+  items,
+  className,
+  tone,
+}: {
+  title: string
+  items?: string[]
+  className: string
+  tone: string
+}) {
+  if (!items?.length) return null
+  return (
+    <div className={className}>
+      <div className="text-[10px] uppercase tracking-wider text-white/35">{title}</div>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {items.map((c) => (
+          <span key={c} className={`rounded px-1.5 py-px text-[10px] ${tone}`}>
+            {c}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PasswordField({
+  revealed,
+  value,
+  onChange,
+  onToggle,
+}: {
+  revealed: boolean
+  value: string
+  onChange: (v: string) => void
+  onToggle: () => void
+}) {
+  return (
+    <TextField
+      aria-label="Password"
+      type={revealed ? 'text' : 'password'}
+      value={value}
+      onChange={onChange}
+      variant="secondary"
+      className="mt-2"
+    >
+      <Label>Password</Label>
+      <InputGroup>
+        <Input className="font-mono" />
+        <InputGroup.Suffix>
+          <Button
+            size="sm"
+            variant="ghost"
+            isIconOnly
+            aria-label={revealed ? 'Hide password' : 'Decrypt and show password'}
+            onPress={onToggle}
+          >
+            {revealed ? '🙈' : '👁'}
+          </Button>
+        </InputGroup.Suffix>
+      </InputGroup>
+    </TextField>
+  )
+}
+
+/** sets the session passphrase; an empty field clears it */
+function PassphraseField({ onStatus }: { onStatus: (s: string) => void }) {
+  const { passphrase, setPassphrase } = useStack()
+  const [pass, setPass] = useState('')
+  const apply = () => {
+    setPassphrase(pass || null)
+    setPass('')
+    onStatus(pass ? 'Passphrase set.' : 'Passphrase cleared.')
+  }
+  return (
+    <TextField
+      aria-label="Passphrase"
+      type="password"
+      value={pass}
+      onChange={setPass}
+      variant="secondary"
+      className="mt-2"
+    >
+      <Label>Passphrase (this session only)</Label>
+      <InputGroup>
+        <Input placeholder={passphrase ? 'set' : 'not set'} />
+        <InputGroup.Suffix>
+          <Button size="sm" variant="ghost" onPress={apply}>
+            Set
+          </Button>
+        </InputGroup.Suffix>
+      </InputGroup>
+      <Description>
+        AES-GCM in your browser. The passphrase is never stored — clear it and the saved password is unreadable.
+      </Description>
+    </TextField>
+  )
+}
+
+/** Right drawer for the selected block: details, problems and its encrypted account fields. */
 export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) {
-  const { creds, setCreds, select, requestRemove, passphrase, setPassphrase } = useStack()
+  const { creds, setCreds, select, requestRemove, passphrase } = useStack()
   const saved = creds[tech.id] ?? {}
 
   const [url, setUrl] = useState(saved.url ?? '')
@@ -615,7 +850,6 @@ export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) 
   const [notes, setNotes] = useState(saved.notes ?? '')
   const [secret, setSecret] = useState('')
   const [revealed, setRevealed] = useState(false)
-  const [pass, setPass] = useState('')
   const [status, setStatus] = useState<string | null>(null)
 
   useEffect(() => {
@@ -648,6 +882,12 @@ export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) 
     setStatus(null)
   }
 
+  const toggleReveal = () => {
+    if (!revealed) return reveal()
+    setRevealed(false)
+    setSecret('')
+  }
+
   return (
     <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l border-white/10 bg-[#0d1014] p-4 text-[12px]">
       <div className="flex items-start gap-2">
@@ -661,40 +901,14 @@ export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) 
 
       <p className="mt-3 text-white/60">{tech.desc}</p>
 
-      {problems.map((p, i) => (
-        <div
-          key={i}
-          className={`mt-2 rounded border px-2 py-1.5 ${
-            p.severity === 'error'
-              ? 'border-red-500/40 bg-red-500/10 text-red-300'
-              : 'border-amber-500/40 bg-amber-500/10 text-amber-300'
-          }`}
-        >
+      {problems.map((p) => (
+        <div key={p.message} className={`mt-2 rounded border px-2 py-1.5 ${NOTE_TONE[p.severity]}`}>
           {p.message}
         </div>
       ))}
 
-      {!!tech.provides?.length && (
-        <div className="mt-3">
-          <div className="text-[10px] uppercase tracking-wider text-white/35">Provides</div>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {tech.provides.map((c) => (
-              <span key={c} className="rounded bg-emerald-500/15 px-1.5 py-px text-[10px] text-emerald-300">{c}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {!!tech.needs?.length && (
-        <div className="mt-2">
-          <div className="text-[10px] uppercase tracking-wider text-white/35">Requires</div>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {tech.needs.map((c) => (
-              <span key={c} className="rounded bg-cyan-500/15 px-1.5 py-px text-[10px] text-cyan-300">{c}</span>
-            ))}
-          </div>
-        </div>
-      )}
+      <ChipList title="Provides" items={tech.provides} className="mt-3" tone="bg-emerald-500/15 text-emerald-300" />
+      <ChipList title="Requires" items={tech.needs} className="mt-2" tone="bg-cyan-500/15 text-cyan-300" />
 
       <div className="mt-5 border-t border-white/10 pt-3">
         <div className="text-[10px] uppercase tracking-wider text-white/35">Account</div>
@@ -709,49 +923,17 @@ export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) 
           <Input />
         </TextField>
 
-        <TextField
-          aria-label="Password"
-          type={revealed ? 'text' : 'password'}
-          value={revealed ? secret : saved.secret ? '••••••••••' : secret}
-          onChange={(v) => { setSecret(v); setRevealed(true) }}
-          variant="secondary"
-          className="mt-2"
-        >
-          <Label>Password</Label>
-          <InputGroup>
-            <Input className="font-mono" />
-            <InputGroup.Suffix>
-              <Button
-                size="sm"
-                variant="ghost"
-                isIconOnly
-                aria-label={revealed ? 'Hide password' : 'Decrypt and show password'}
-                onPress={() => (revealed ? (setRevealed(false), setSecret('')) : reveal())}
-              >
-                {revealed ? '🙈' : '👁'}
-              </Button>
-            </InputGroup.Suffix>
-          </InputGroup>
-        </TextField>
+        <PasswordField
+          revealed={revealed}
+          value={!revealed && saved.secret ? '••••••••••' : secret}
+          onChange={(v) => {
+            setSecret(v)
+            setRevealed(true)
+          }}
+          onToggle={toggleReveal}
+        />
 
-        <TextField aria-label="Passphrase" type="password" value={pass} onChange={setPass} variant="secondary" className="mt-2">
-          <Label>Passphrase (this session only)</Label>
-          <InputGroup>
-            <Input placeholder={passphrase ? 'set' : 'not set'} />
-            <InputGroup.Suffix>
-              <Button
-                size="sm"
-                variant="ghost"
-                onPress={() => { setPassphrase(pass || null); setPass(''); setStatus(pass ? 'Passphrase set.' : 'Passphrase cleared.') }}
-              >
-                Set
-              </Button>
-            </InputGroup.Suffix>
-          </InputGroup>
-          <Description>
-            AES-GCM in your browser. The passphrase is never stored — clear it and the saved password is unreadable.
-          </Description>
-        </TextField>
+        <PassphraseField onStatus={setStatus} />
 
         <TextField aria-label="Notes" value={notes} onChange={setNotes} variant="secondary" className="mt-2">
           <Label>Notes</Label>
@@ -759,7 +941,9 @@ export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) 
         </TextField>
 
         <div className="mt-3 flex items-center gap-2">
-          <Button size="sm" onPress={save}>Save</Button>
+          <Button size="sm" onPress={save}>
+            Save
+          </Button>
           {url && (
             <a href={url} target="_blank" rel="noreferrer" className="text-[11px] text-muted hover:text-foreground">
               Open ↗
@@ -769,12 +953,7 @@ export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) 
         </div>
       </div>
 
-      <Button
-        size="sm"
-        variant="danger"
-        onPress={() => requestRemove(tech.id)}
-        className="mt-6 self-start text-[11px]"
-      >
+      <Button size="sm" variant="danger" onPress={() => requestRemove(tech.id)} className="mt-6 self-start text-[11px]">
         Remove from stack
       </Button>
     </aside>

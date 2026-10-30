@@ -1,0 +1,1 @@
+{ "threshold": 3, "pattern": "src/**/*.{ts,tsx}", "ignore": ["**/*.test.ts"], "reporters": ["console"] }

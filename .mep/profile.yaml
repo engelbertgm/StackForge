@@ -1,0 +1,39 @@
+version: 1
+catalog_version: 2026.10.7
+project: stackforge
+phase:
+  closed: []
+  active: foundation.setup
+type: internal-app
+capabilities:
+  - uploads
+markets: []
+audience: []
+context: own-product
+counts:
+  pages: 1
+  entities: 0
+  languages: 1
+  integrations: 0
+signals:
+  has_forms: false
+  has_long_forms: true
+  has_db: false
+  db_client_access: false
+  has_personal_data: false
+  has_dates: false
+  has_tables: false
+  has_destructive_actions: true
+  has_embeds: false
+  has_nonessential_cookies: false
+  team: solo
+selections:
+  optional_added: []
+  recommended_skipped: []
+  overrides: []
+  manual_confirmed: []
+  grace: []
+stack:
+  decided:
+    framework: vite-react
+summary: "StackForge is a local-running tool that suggests which technology stack to use based on your needs. You drop technologies on a canvas and it shows conflicts, missing pieces and connections. Everything runs in the browser: no backend, no accounts, no telemetry. It is a suggestion tool, not a SaaS, and has no legal surface. English only."
