@@ -115,3 +115,27 @@ export interface Problem {
   severity: 'error' | 'warn'
   message: string
 }
+
+/**
+ * The facts behind the detail drawer: who owns the code, what it costs, where it runs, and
+ * its trade-offs. Drafted from public docs and dated (see ProfileFile.checked), because pricing moves.
+ */
+export interface Profile {
+  /** oss: OSI licence · source-available: readable code, restricted licence (BSL, SSPL, ELv2…) · proprietary */
+  license: 'oss' | 'source-available' | 'proprietary'
+  /** free: nothing to pay for real use · freemium: free tier, pay to grow · paid: no useful free tier */
+  pricing: 'free' | 'freemium' | 'paid'
+  /**
+   * library: code you ship inside your own app · self-host: you run it · cloud: only the vendor
+   * runs it · cloud-or-self: a hosted offering, and you may run it yourself
+   */
+  hosting: 'library' | 'self-host' | 'cloud' | 'cloud-or-self'
+  pros: string[]
+  cons: string[]
+}
+
+/** One group's profiles, keyed by tech id, with the day they were last checked against vendor docs. */
+export interface ProfileFile {
+  checked: string
+  profiles: Record<string, Profile>
+}

@@ -1,4 +1,4 @@
-import { ExternalLinkIcon, EyeIcon, EyeOffIcon, TrashIcon, XIcon } from 'lucide-react'
+import { ExternalLinkIcon, EyeIcon, EyeOffIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { decryptSecret, encryptSecret } from '../crypto'
 import { useStack } from '../store'
 import type { Problem, Tech } from '../types'
 import { TechIcon } from './nodes'
+import { ProfileSection, type StackLink, StackLinks } from './tech-profile'
 
 const NOTE_TONE: Record<Problem['severity'], string> = {
   error: 'bg-destructive/10 text-destructive',
@@ -76,9 +77,9 @@ function PassphraseField({ onStatus }: { onStatus: (s: string) => void }) {
   )
 }
 
-/** Right floating drawer for the selected block: details, problems and its encrypted account fields. */
-export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) {
-  const { creds, setCreds, select, requestRemove, passphrase } = useStack()
+/** The block's account details — console URL, login and an encrypted password — saved in this browser only. */
+function AccountForm({ tech }: { tech: Tech }) {
+  const { creds, setCreds, passphrase } = useStack()
   const saved = creds[tech.id] ?? {}
 
   const [url, setUrl] = useState(saved.url ?? '')
@@ -125,6 +126,98 @@ export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) 
   }
 
   return (
+    <div className="mt-6 border-t border-border pt-4">
+      <h3 className="text-caption uppercase text-muted-foreground">Account</h3>
+
+      <Field label="Console URL">
+        {(id) => (
+          <Input id={id} value={url} onChange={(e) => setUrl(e.target.value)} placeholder={tech.url ?? 'https://…'} />
+        )}
+      </Field>
+
+      <Field label="Username">
+        {(id) => <Input id={id} value={username} onChange={(e) => setUsername(e.target.value)} />}
+      </Field>
+
+      <Field label="Password">
+        {(id) => (
+          <div className="relative">
+            <Input
+              id={id}
+              type={revealed ? 'text' : 'password'}
+              value={!revealed && saved.secret ? '••••••••••' : secret}
+              onChange={(e) => {
+                setSecret(e.target.value)
+                setRevealed(true)
+              }}
+              className="pr-10 font-mono"
+            />
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2"
+              aria-label={revealed ? 'Hide password' : 'Decrypt and show password'}
+              onClick={toggleReveal}
+            >
+              {revealed ? <EyeOffIcon /> : <EyeIcon />}
+            </Button>
+          </div>
+        )}
+      </Field>
+
+      <PassphraseField onStatus={setStatus} />
+
+      <Field label="Notes">
+        {(id) => (
+          <Textarea id={id} rows={2} className="resize-none" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        )}
+      </Field>
+
+      <div className="mt-4 flex items-center gap-3">
+        <Button onClick={save}>Save</Button>
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-small font-medium text-link hover:underline"
+          >
+            Open <ExternalLinkIcon className="size-3.5" />
+          </a>
+        )}
+        {status && (
+          <span role="status" className="text-small text-muted-foreground">
+            {status}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Right floating drawer for one technology: what it is, licence, pricing and hosting, pros and
+ * cons, how it fits the current stack, and — once it is on the canvas — its account details.
+ * Opened from a card on the canvas, or from the palette to look before adding.
+ */
+export function Drawer({
+  tech,
+  problems,
+  links,
+  onCanvas,
+  blocked,
+}: {
+  tech: Tech
+  problems: Problem[]
+  /** its relationships with the stack, phrased from its side */
+  links: StackLink[]
+  onCanvas: boolean
+  /** why it cannot be added, when it cannot */
+  blocked: string | null
+}) {
+  const { select, add, requestRemove } = useStack()
+
+  return (
     <motion.aside
       aria-label={`${tech.name} details`}
       initial={{ opacity: 0, x: 32 }}
@@ -152,86 +245,29 @@ export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] }) 
         </p>
       ))}
 
+      <ProfileSection tech={tech} />
+      <StackLinks links={links} onCanvas={onCanvas} />
+
       <ChipList title="Provides" items={tech.provides} tone="bg-success/12 text-success" />
       <ChipList title="Requires" items={tech.needs} tone="bg-accent text-foreground" />
 
-      <div className="mt-6 border-t border-border pt-4">
-        <h3 className="text-caption uppercase text-muted-foreground">Account</h3>
-
-        <Field label="Console URL">
-          {(id) => (
-            <Input id={id} value={url} onChange={(e) => setUrl(e.target.value)} placeholder={tech.url ?? 'https://…'} />
-          )}
-        </Field>
-
-        <Field label="Username">
-          {(id) => <Input id={id} value={username} onChange={(e) => setUsername(e.target.value)} />}
-        </Field>
-
-        <Field label="Password">
-          {(id) => (
-            <div className="relative">
-              <Input
-                id={id}
-                type={revealed ? 'text' : 'password'}
-                value={!revealed && saved.secret ? '••••••••••' : secret}
-                onChange={(e) => {
-                  setSecret(e.target.value)
-                  setRevealed(true)
-                }}
-                className="pr-10 font-mono"
-              />
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2"
-                aria-label={revealed ? 'Hide password' : 'Decrypt and show password'}
-                onClick={toggleReveal}
-              >
-                {revealed ? <EyeOffIcon /> : <EyeIcon />}
-              </Button>
-            </div>
-          )}
-        </Field>
-
-        <PassphraseField onStatus={setStatus} />
-
-        <Field label="Notes">
-          {(id) => (
-            <Textarea
-              id={id}
-              rows={2}
-              className="resize-none"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          )}
-        </Field>
-
-        <div className="mt-4 flex items-center gap-3">
-          <Button onClick={save}>Save</Button>
-          {url && (
-            <a
-              href={url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-small font-medium text-link hover:underline"
-            >
-              Open <ExternalLinkIcon className="size-3.5" />
-            </a>
-          )}
-          {status && (
-            <span role="status" className="text-small text-muted-foreground">
-              {status}
-            </span>
-          )}
+      {onCanvas ? (
+        <>
+          <AccountForm tech={tech} />
+          <Button variant="destructive" className="mt-6 self-start" onClick={() => requestRemove(tech.id)}>
+            <TrashIcon />
+            Remove from stack
+          </Button>
+        </>
+      ) : (
+        <div className="mt-6 space-y-2">
+          {blocked && <p className="rounded-xl bg-destructive/10 px-3 py-2 text-small text-destructive">{blocked}</p>}
+          <Button disabled={!!blocked} onClick={() => add(tech.id)}>
+            <PlusIcon />
+            Add to stack
+          </Button>
         </div>
-      </div>
-
-      <Button variant="destructive" className="mt-6 self-start" onClick={() => requestRemove(tech.id)}>
-        <TrashIcon />
-        Remove from stack
-      </Button>
+      )}
     </motion.aside>
   )
 }

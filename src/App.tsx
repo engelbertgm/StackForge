@@ -25,6 +25,7 @@ import { Drawer } from '@/components/drawer'
 import { Inspector } from '@/components/inspector'
 import { NeedsPanel } from '@/components/needs-panel'
 import { Palette } from '@/components/palette'
+import type { StackLink } from '@/components/tech-profile'
 import { Toast } from '@/components/toast'
 import { TopBar } from '@/components/top-bar'
 import { Button } from '@/components/ui/button'
@@ -32,7 +33,7 @@ import { groupById, stackRules, techById } from './catalog'
 import { GhostNode, GroupNode, REL, RelEdge, TechNode } from './components/nodes'
 import { type Box, layout, NODE_H, NODE_W } from './layout'
 import { planRoutes, type Rect, type Route } from './routing'
-import { type Analysis, analyze } from './rules'
+import { type Analysis, analyze, blockedBy } from './rules'
 import { type Guide, snap } from './snap'
 import { matchesHighlight, useStack } from './store'
 import type { Tech } from './types'
@@ -161,6 +162,16 @@ function relEdge(
   }
 }
 
+/** the clicked block and every block wired to it — everything else fades out */
+function neighboursOf(id: string, rel: Analysis['edges']): Set<string> {
+  const set = new Set([id])
+  for (const e of rel) {
+    if (e.source === id) set.add(e.target)
+    if (e.target === id) set.add(e.source)
+  }
+  return set
+}
+
 function Canvas() {
   const { added, nodePos, groupPos, selected, highlight, fitTick, select, setNodePos, setGroupPos, requestRemove } =
     useStack()
@@ -188,16 +199,11 @@ function Canvas() {
     [techs, canvasSize.w, canvasSize.h],
   )
 
-  /** ids connected to the clicked block — everything else fades out */
-  const neighbours = useMemo(() => {
-    if (!selected) return null
-    const set = new Set([selected])
-    for (const e of rel) {
-      if (e.source === selected) set.add(e.target)
-      if (e.target === selected) set.add(e.source)
-    }
-    return set
-  }, [selected, rel])
+  // a tech opened from the palette for a look is not on the canvas, so nothing should fade
+  const neighbours = useMemo(
+    () => (selected && added.includes(selected) ? neighboursOf(selected, rel) : null),
+    [selected, rel, added],
+  )
 
   const matchesFilter = (t: Tech) => matchesHighlight(t, highlight)
 
@@ -423,6 +429,25 @@ const minimapColor = (n: Node) =>
     ? `${groupById.get(n.id.slice(6))?.color ?? ''}55`
     : (techById.get(n.id)?.color ?? 'var(--muted-foreground)')
 
+/**
+ * Every line `tech` draws, or would draw once added, to the rest of the stack — phrased from its
+ * side ("requires PostgreSQL", "Vitest tests Next.js") for the drawer.
+ */
+function linksFor(tech: Tech, stack: Tech[]): StackLink[] {
+  const withIt = stack.some((t) => t.id === tech.id) ? stack : [...stack, tech]
+  return analyze(withIt, stackRules)
+    .edges.filter((e) => e.source === tech.id || e.target === tech.id)
+    .map((e) => {
+      const out = e.source === tech.id
+      const other = techById.get(out ? e.target : e.source)?.name ?? ''
+      if (e.rel === 'conflicts') return { text: `incompatible with ${other}`, bad: true }
+      const { label, both } = REL[e.rel]
+      // a two-way line (queries, syncs) has no subject, so it reads the same from either end
+      if (both) return { text: `${label} ↔ ${other}`, bad: false }
+      return { text: out ? `${label} ${other}` : `${other} ${label} ${tech.name}`, bad: false }
+    })
+}
+
 /** Every glass panel that floats over the canvas, plus the toasts and the delete guard. */
 function Overlays({
   analysis,
@@ -436,7 +461,8 @@ function Overlays({
   const { problems } = analysis
   const [toast, setToast] = useState<string | null>(null)
 
-  const { lastRemoved, undoRemove, dismissUndo } = useStack()
+  const { lastRemoved, undoRemove, dismissUndo, added } = useStack()
+  const stack = useMemo(() => added.map((id) => techById.get(id)).filter((t): t is Tech => !!t), [added])
   const lastRemovedName = lastRemoved ? (techById.get(lastRemoved.id)?.name ?? lastRemoved.id) : null
   const problemsOf = (id?: string | null) => (id ? problems.filter((p) => p.techId === id) : [])
 
@@ -458,7 +484,16 @@ function Overlays({
       />
       <NeedsPanel analysis={analysis} shifted={!!selectedTech} />
       <AnimatePresence>
-        {selectedTech && <Drawer key={selectedTech.id} tech={selectedTech} problems={problemsOf(selectedTech.id)} />}
+        {selectedTech && (
+          <Drawer
+            key={selectedTech.id}
+            tech={selectedTech}
+            problems={problemsOf(selectedTech.id)}
+            onCanvas={added.includes(selectedTech.id)}
+            links={linksFor(selectedTech, stack)}
+            blocked={added.includes(selectedTech.id) ? null : blockedBy(selectedTech, stack)}
+          />
+        )}
       </AnimatePresence>
       <Inspector tech={hovered ? techById.get(hovered) : undefined} problems={problemsOf(hovered)} />
 

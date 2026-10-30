@@ -1,4 +1,4 @@
-import { CheckIcon, ChevronRightIcon, SearchIcon } from 'lucide-react'
+import { CheckIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -220,7 +220,7 @@ function PaletteItem({
   onBlocked: (msg: string) => void
   selected: Tech[]
 }) {
-  const { added, add, requestRemove, highlight } = useStack()
+  const { added, add, requestRemove, highlight, select } = useStack()
   const on = added.includes(t.id)
   const reason = on ? null : blockedBy(t, selected)
   const hit = !!highlight && matchesHighlight(t, highlight)
@@ -231,30 +231,41 @@ function PaletteItem({
     add(t.id)
   }
   return (
-    <motion.button
-      type="button"
-      whileTap={{ scale: 0.98 }}
-      title={reason ?? t.desc}
-      aria-pressed={on}
-      onClick={press}
-      className={cn(
-        'flex w-full flex-col gap-1 rounded-lg px-2 py-1.5 text-left text-small transition-colors',
-        itemTone(reason, on),
-        itemRing(hit, highlight),
-      )}
-    >
-      <span className="flex w-full items-center gap-2">
-        <span className="tint-dot size-2 shrink-0 rounded-sm" style={tint(t)} />
-        <span className="min-w-0 truncate" title={t.name}>
-          {t.name}
+    <div className="group/item relative">
+      <motion.button
+        type="button"
+        whileTap={{ scale: 0.98 }}
+        title={reason ?? t.desc}
+        aria-pressed={on}
+        onClick={press}
+        className={cn(
+          'flex w-full flex-col gap-1 rounded-lg py-1.5 pl-2 pr-8 text-left text-small transition-colors',
+          itemTone(reason, on),
+          itemRing(hit, highlight),
+        )}
+      >
+        <span className="flex w-full items-center gap-2">
+          <span className="tint-dot size-2 shrink-0 rounded-sm" style={tint(t)} />
+          <span className="min-w-0 truncate" title={t.name}>
+            {t.name}
+          </span>
+          <span className="ml-auto flex shrink-0 items-center gap-1">
+            {chip && <span className="rounded-full bg-muted px-1.5 font-mono text-micro text-foreground">{chip}</span>}
+            {on && <CheckIcon className="size-3.5 text-success" aria-label="on the canvas" />}
+          </span>
         </span>
-        <span className="ml-auto flex shrink-0 items-center gap-1">
-          {chip && <span className="rounded-full bg-muted px-1.5 font-mono text-micro text-foreground">{chip}</span>}
-          {on && <CheckIcon className="size-3.5 text-success" aria-label="on the canvas" />}
-        </span>
-      </span>
-      {/* the reasons sit on their own line, so any number of them fits without squeezing the name */}
-      <WhyPills why={why} />
-    </motion.button>
+        {/* the reasons sit on their own line, so any number of them fits without squeezing the name */}
+        <WhyPills why={why} />
+      </motion.button>
+      {/* look before adding: opens the drawer with pros, cons and how it would fit */}
+      <button
+        type="button"
+        aria-label={`Details for ${t.name}`}
+        onClick={() => select(t.id)}
+        className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/item:opacity-100"
+      >
+        <InfoIcon className="size-3.5" />
+      </button>
+    </div>
   )
 }

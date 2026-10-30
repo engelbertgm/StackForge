@@ -46,5 +46,5 @@
 
   { "id": "frontend-no-styling", "when": ["ui"], "requires": ["styling"], "severity": "warn",
     "message": "UI components with no styling system.",
-    "wire": { "rel": "styles", "from": "provider" } }
+    "wire": { "rel": "styles", "from": "needer" } }
 ]

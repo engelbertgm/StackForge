@@ -1,4 +1,4 @@
-import type { Build, Group, StackRule, Tech } from '../types'
+import type { Build, Group, Profile, ProfileFile, StackRule, Tech } from '../types'
 import ai from './ai.json' with { type: 'json' }
 import analytics from './analytics.json' with { type: 'json' }
 import auth from './auth.json' with { type: 'json' }
@@ -15,6 +15,7 @@ import language from './language.json' with { type: 'json' }
 import mobile from './mobile.json' with { type: 'json' }
 import observability from './observability.json' with { type: 'json' }
 import pm from './pm.json' with { type: 'json' }
+import frontendProfiles from './profiles/frontend.json' with { type: 'json' }
 import rulesJson from './rules.json' with { type: 'json' }
 import testing from './testing.json' with { type: 'json' }
 
@@ -46,6 +47,14 @@ export const techs = files.flat() as unknown as Tech[]
 export const techById = new Map(techs.map((t) => [t.id, t]))
 export const groupById = new Map(groups.map((g) => [g.id, g]))
 export const buildById = new Map(builds.map((b) => [b.id, b]))
+
+/** Profile files, one per group as they are drafted (src/catalog/profiles). */
+const profileFiles = [frontendProfiles] as ProfileFile[]
+
+/** A tech's licence, pricing, hosting and trade-offs, with the day they were checked. Absent until drafted. */
+export const profileById = new Map<string, Profile & { checked: string }>(
+  profileFiles.flatMap((f) => Object.entries(f.profiles).map(([id, p]) => [id, { ...p, checked: f.checked }] as const)),
+)
 
 /**
  * The part this tech would play in that build, or null if it plays none. First matching role
@@ -102,6 +111,23 @@ const buildErrors = (b: Build) =>
     }),
   )
 
+const LICENSES = ['oss', 'source-available', 'proprietary']
+const PRICING = ['free', 'freemium', 'paid']
+const HOSTING = ['library', 'self-host', 'cloud', 'cloud-or-self']
+
+// a profile for a tech that does not exist, or a value the drawer cannot show, is a typo
+const profileErrors = ([id, p]: [string, Profile & { checked: string }]) =>
+  [
+    !techById.has(id) && 'unknown tech',
+    !LICENSES.includes(p.license) && `license "${p.license}"`,
+    !PRICING.includes(p.pricing) && `pricing "${p.pricing}"`,
+    !HOSTING.includes(p.hosting) && `hosting "${p.hosting}"`,
+    !(p.pros.length && p.cons.length) && 'needs at least one pro and one con',
+    !/^\d{4}-\d{2}-\d{2}$/.test(p.checked) && `checked "${p.checked}"`,
+  ]
+    .filter((e): e is string => !!e)
+    .map((e) => `profile ${id}: ${e}`)
+
 /** Catalog integrity — run by catalog.test.ts and logged in dev. */
 export function validateCatalog(): string[] {
   return [
@@ -109,5 +135,6 @@ export function validateCatalog(): string[] {
     ...techs.flatMap(techErrors),
     ...stackRules.flatMap(ruleErrors),
     ...builds.flatMap(buildErrors),
+    ...[...profileById].flatMap(profileErrors),
   ]
 }

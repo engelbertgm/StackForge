@@ -83,3 +83,8 @@ test('GitHub Actions draws a line to what it runs and where it deploys', () => {
     'vitest:automates',
   ])
 })
+
+test('a satisfied styling rule reads React styled with Tailwind, not the other way round', () => {
+  const { edges } = analyze(pick('react', 'tailwindcss'), stackRules)
+  assert.ok(edges.some((e) => e.source === 'react' && e.target === 'tailwindcss' && e.rel === 'styles'))
+})
