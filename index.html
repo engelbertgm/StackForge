@@ -1,11 +1,18 @@
 <!doctype html>
-<!-- StackForge is dark only; HeroUI reads its theme variables off this element -->
-<html lang="en" class="dark" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>stackforge</title>
+    <title>StackForge</title>
+    <!-- theme before first paint, so a dark-mode visitor never sees a light flash -->
+    <script>
+      try {
+        var t = localStorage.getItem('stackforge-theme')
+        var dark = t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', dark)
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

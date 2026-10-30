@@ -7,8 +7,8 @@
     "package.json",
     "pnpm-lock.yaml"
   ],
-  "notes": "pnpm-lock.yaml is tracked (git ls-files); package.json:43 packageManager pnpm@10.33.0; CI installs with 'pnpm install --frozen-lockfile' (ci.yml:21, mep.yml:23). No competing lockfile.",
-  "hash": "e112e095e32d5ad12a6bdaf4ea8236244e80a0049f28d0de637d621e395db8b4",
+  "notes": "Re-audit after shadcn move to devDependencies. pnpm-lock.yaml importers: shadcn under devDependencies (specifier 4.23.0) matching package.json:45; 'pnpm install --frozen-lockfile --lockfile-only' succeeds (pnpm 10.33.0). Only registry.npmjs.org sources; onlyBuiltDependencies = lefthook. package.json and pnpm-lock.yaml still uncommitted: commit together.",
+  "hash": "a1343e03eaddc4a73171f1b7580bfdf968b4d504e64a21413201bf8eb27f19b5",
   "date": "2026-10-30",
   "by": "mep-security"
 }

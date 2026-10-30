@@ -1,6 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["src/**/*.test.ts"],
-  "ignore": ["tests/**"],
-  "ignoreBinaries": ["playwright"]
+  "entry": [
+    "src/**/*.test.ts"
+  ],
+  "ignore": [
+    "tests/**",
+    "src/components/ui/**"
+  ],
+  "ignoreBinaries": [
+    "playwright"
+  ]
 }

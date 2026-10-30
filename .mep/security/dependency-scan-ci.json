@@ -7,8 +7,8 @@
     "package.json",
     "pnpm-lock.yaml"
   ],
-  "notes": "mep.yml:30 runs 'pnpm audit --audit-level critical --prod' on PR and push to main (fails on critical); both workflows install with --frozen-lockfile (mep.yml:23, ci.yml:21). Local run of the same command: no known vulnerabilities. Note: mep.yml is still untracked; it only protects once committed and pushed.",
-  "hash": "e112e095e32d5ad12a6bdaf4ea8236244e80a0049f28d0de637d621e395db8b4",
+  "notes": "Re-audit after moving shadcn to devDependencies (package.json:45, pinned 4.23.0; lockfile importers devDependencies line 81). Runtime deps otherwise identical to the vetted set (motion, radix-ui, class-variance-authority, lucide-react, cn 0.5.0 shadcn-ui/cn, tw-animate-css, @fontsource-variable/inter, geist-mono). pnpm audit --audit-level critical --prod: No known vulnerabilities found, exit 0 (the source-map-js high and deepmerge low advisories left the prod tree with shadcn). CI gate unchanged: mep.yml:30; --frozen-lockfile in mep.yml:23, ci.yml:21.",
+  "hash": "a1343e03eaddc4a73171f1b7580bfdf968b4d504e64a21413201bf8eb27f19b5",
   "date": "2026-10-30",
   "by": "mep-security"
 }

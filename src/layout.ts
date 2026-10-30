@@ -2,7 +2,7 @@ import { groups } from './catalog'
 import type { Tech } from './types'
 
 export const NODE_W = 168
-export const NODE_H = 62
+export const NODE_H = 68
 const GAP = 14
 const COLS = 2
 export const PAD = 22

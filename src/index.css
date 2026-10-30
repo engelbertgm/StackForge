@@ -1,87 +1,488 @@
 @import "tailwindcss";
-/* order matters: tailwind first, then HeroUI's layer */
-@import "@heroui/styles";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/geist-mono";
 
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-  background: #0b0d10;
-  overflow: hidden;
-}
-body {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-}
+@custom-variant dark (&:is(.dark *));
 
-/* ---------- one radius identity ----------
-   The UI had three shapes at once: HeroUI buttons are pills (rounded-3xl = 24px on an h-8
-   control), its fields sit at 12px, and our own markup added 4px, 8px and 16px on top.
-   Every control and every surface is now the same 10px rounded rectangle.
-   HeroUI derives its whole scale from these tokens, so the first block restyles every one of
-   its components at once; the second catches the Tailwind utilities our own markup uses,
-   which compile to literals rather than to the tokens. Circles survive only where a circle
-   is the point — status dots and the card's remove button keep `rounded-full`. */
+/* =====================================================================================
+   Design tokens — the only file in the app allowed to name a colour.
+
+   Identity (picked in docs/design/identity-lab.html): glass and aurora with an editorial
+   hand; Ember accent, neutral greys, Inter, 12px corners. Light and dark share every token
+   name; `.dark` on <html> swaps the values.
+
+   Contrast is enforced, not eyeballed: src/design/contrast.test.ts reads this file and fails
+   `pnpm check` when a text pair drops under WCAG AA (4.5:1, 3:1 for large text and UI marks).
+   That is why the accent comes in two strengths — the raw Ember for light, glow and the logo,
+   and a deepened Ember wherever white text has to sit on it.
+   ===================================================================================== */
+
 :root {
-  --radius: 10px;
-  --radius-xl: 10px;
-  --radius-2xl: 10px;
-  --radius-3xl: 10px;
-  --radius-4xl: 10px;
-  --field-radius: 10px;
-}
-.rounded-md,
-.rounded-lg,
-.rounded-xl,
-.rounded-2xl,
-.rounded-3xl {
-  border-radius: 10px;
-}
-/* inline tags, count badges and colour swatches: same family, scaled for a ~14px-tall box.
-   Every bare `rounded` in this codebase is one of those, so it belongs on this tier. */
-.rounded,
-.rounded-xs,
-.rounded-sm {
-  border-radius: 6px;
+  /* ---- ember: the raw brand stops — decoration only (glows, aurora, mark, favicon) ---- */
+  --forge-1: oklch(0.75 0.167 50.5);
+  --forge-2: oklch(0.683 0.208 35.4);
+  --forge-3: oklch(0.583 0.203 31.3);
+  --gradient-forge: linear-gradient(100deg, var(--forge-1), var(--forge-2) 55%, var(--forge-3));
+  /* ---- deep ember: the same hues, dark enough for white text at 4.5:1 ---- */
+  --forge-deep-1: oklch(0.56 0.16 50);
+  --forge-deep-2: oklch(0.53 0.19 36);
+  --forge-deep-3: oklch(0.5 0.19 31);
+  --gradient-forge-deep: linear-gradient(100deg, var(--forge-deep-1), var(--forge-deep-2) 55%, var(--forge-deep-3));
+  /* gradient text (wordmark, accent words): deep on paper, raw on dark */
+  --text-forge-1: var(--forge-deep-1);
+  --text-forge-2: var(--forge-deep-2);
+  --text-forge-3: var(--forge-deep-3);
+
+  /* ---- semantic surfaces and text (neutral greys: no hue, so Ember carries all colour) ---- */
+  --background: oklch(0.972 0 0);
+  --foreground: oklch(0.18 0 0);
+  --card: oklch(0.995 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.995 0 0);
+  --popover-foreground: var(--foreground);
+  /* primary is the Ember pill: deep ember under white text */
+  --primary: var(--forge-deep-2);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.995 0 0);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.935 0 0);
+  --muted-foreground: oklch(0.46 0 0);
+  /* large or decorative text only (≥ 3:1) — the grey half of an editorial headline */
+  --subtle-foreground: oklch(0.6 0 0);
+  --accent: oklch(0.95 0 0);
+  --accent-foreground: var(--foreground);
+  /* crimson, not orange: kept 15° of hue away from Ember so "danger" never reads as "primary" */
+  --destructive: oklch(0.53 0.21 22);
+  --warning: oklch(0.53 0.12 75);
+  --success: oklch(0.52 0.12 155);
+  --link: oklch(0.5 0.19 35);
+  --border: oklch(0.18 0 0 / 0.1);
+  --input: oklch(0.18 0 0 / 0.16);
+  --ring: oklch(0.56 0.19 38);
+
+  /* ---- glass ---- */
+  --glass: oklch(1 0 0 / 0.5);
+  --glass-strong: oklch(1 0 0 / 0.78);
+  --glass-border: oklch(0.18 0 0 / 0.08);
+  --glass-highlight: oklch(1 0 0 / 0.9);
+  --blur-glass: 36px;
+  --blur-nav: 44px;
+
+  /* ---- aurora: faint Ember warmth with a sky counter-tone ---- */
+  --aurora-1: oklch(0.85 0.12 55 / 0.14);
+  --aurora-2: oklch(0.78 0.15 35 / 0.1);
+  --aurora-3: oklch(0.82 0.08 220 / 0.09);
+  --aurora-4: oklch(0.88 0.06 220 / 0.1);
+
+  /* ---- canvas ---- */
+  --canvas-dot: oklch(0.18 0 0 / 0.12);
+  --node: oklch(0.995 0 0);
+  --group-fill: oklch(1 0 0 / 0.5);
+  --mark-halo: var(--background);
+
+  /* ---- relationship wires (light: deepened so they hold 3:1 on paper) ---- */
+  --rel-extends: oklch(0.56 0.17 293);
+  --rel-tests: oklch(0.56 0.13 163);
+  --rel-styles: oklch(0.58 0.19 350);
+  --rel-types: oklch(0.55 0.15 255);
+  --rel-monitors: oklch(0.6 0.16 60);
+  --rel-requires: oklch(0.58 0.11 212);
+  --rel-consumes: oklch(0.58 0.15 130);
+  --rel-queries: oklch(0.52 0.17 277);
+  --rel-deploys: oklch(0.6 0.14 85);
+  --rel-automates: oklch(0.55 0.22 322);
+  --rel-conflicts: oklch(0.53 0.21 22);
+  --ghost-fallback: oklch(0.55 0.02 262);
+
+  /* ---- shape, depth, motion ---- */
+  --radius: 0.75rem;
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.06);
+  --shadow-glass:
+    inset 0 1px 0 var(--glass-highlight), 0 1px 2px oklch(0 0 0 / 0.05), 0 12px 40px -12px oklch(0 0 0 / 0.16);
+  --shadow-float: 0 8px 22px -8px oklch(0.5 0.19 35 / 0.55);
+  --shadow-glow: 0 0 28px -6px var(--forge-2);
+  --z-canvas: 0;
+  --z-panel: 10;
+  --z-float: 20;
+  --z-overlay: 40;
+  --z-toast: 50;
+  --z-tooltip: 60;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 360ms;
+  --duration-aurora: 30s;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* shadcn's sidebar and chart families, kept so its generated components resolve */
+  --chart-1: var(--forge-1);
+  --chart-2: var(--forge-2);
+  --chart-3: var(--forge-3);
+  --chart-4: var(--rel-queries);
+  --chart-5: var(--rel-requires);
+  --sidebar: var(--glass);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
-/* HeroUI inlines its radius at build time via @apply, so the utility overrides above never
-   reach these — they have to be named. This is the list of its components that ship a pill
-   (rounded-3xl) or a 16px+ corner; everything else already follows --radius / --field-radius. */
-.button,
-.chip {
-  border-radius: 10px;
+.dark {
+  --text-forge-1: var(--forge-1);
+  --text-forge-2: var(--forge-2);
+  --text-forge-3: oklch(0.66 0.2 31);
+
+  --background: oklch(0.13 0 0);
+  --foreground: oklch(0.965 0 0);
+  --card: oklch(0.175 0 0);
+  --popover: oklch(0.185 0 0);
+  --secondary: oklch(0.22 0 0);
+  --muted: oklch(0.22 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --subtle-foreground: oklch(0.56 0 0);
+  --accent: oklch(0.25 0 0);
+  --destructive: oklch(0.7 0.18 22);
+  --warning: oklch(0.83 0.14 80);
+  --success: oklch(0.77 0.14 160);
+  --link: oklch(0.78 0.14 50);
+  --border: oklch(1 0 0 / 0.09);
+  --input: oklch(1 0 0 / 0.14);
+  --ring: var(--forge-2);
+
+  --glass: oklch(0.19 0 0 / 0.5);
+  --glass-strong: oklch(0.19 0 0 / 0.78);
+  --glass-border: oklch(1 0 0 / 0.08);
+  --glass-highlight: oklch(1 0 0 / 0.06);
+
+  --aurora-1: oklch(0.7 0.16 50 / 0.06);
+  --aurora-2: oklch(0.62 0.2 35 / 0.05);
+  --aurora-3: oklch(0.55 0.12 220 / 0.05);
+  --aurora-4: oklch(0.6 0.1 220 / 0.04);
+
+  --canvas-dot: oklch(1 0 0 / 0.07);
+  --node: oklch(0.2 0 0);
+  --group-fill: oklch(0.12 0 0 / 0.55);
+
+  /* dark: the original wire palette, a hue apart each */
+  --rel-extends: oklch(0.709 0.159 293.5);
+  --rel-tests: oklch(0.773 0.153 163.2);
+  --rel-styles: oklch(0.725 0.175 349.8);
+  --rel-types: oklch(0.714 0.143 254.6);
+  --rel-monitors: oklch(0.758 0.159 55.9);
+  --rel-requires: oklch(0.797 0.134 211.5);
+  --rel-consumes: oklch(0.849 0.207 128.8);
+  --rel-queries: oklch(0.68 0.158 276.9);
+  --rel-deploys: oklch(0.837 0.164 84.4);
+  --rel-automates: oklch(0.748 0.207 322.2);
+  --rel-conflicts: oklch(0.65 0.2 22);
+  --ghost-fallback: oklch(0.661 0.023 261.7);
+
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-glass:
+    inset 0 1px 0 var(--glass-highlight), 0 1px 2px oklch(0 0 0 / 0.3), 0 16px 48px -16px oklch(0 0 0 / 0.6);
+  --shadow-float: 0 8px 24px -8px oklch(0.5 0.19 35 / 0.7);
 }
-.popover,
-.select__popover,
-.alert-dialog__dialog,
-.modal__dialog {
-  border-radius: 10px;
+
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+
+  /* editorial type scale: each step differs from the next in size and weight or colour.
+     Three weights in the whole app — 400, 500, 600. */
+  --text-display: 3.25rem;
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.04em;
+  --text-display--font-weight: 600;
+  --text-h1: 2rem;
+  --text-h1--line-height: 1.1;
+  --text-h1--letter-spacing: -0.03em;
+  --text-h1--font-weight: 600;
+  --text-h2: 1.375rem;
+  --text-h2--line-height: 1.2;
+  --text-h2--letter-spacing: -0.02em;
+  --text-h2--font-weight: 600;
+  --text-h3: 1rem;
+  --text-h3--line-height: 1.35;
+  --text-h3--letter-spacing: -0.01em;
+  --text-h3--font-weight: 500;
+  --text-body: 0.8125rem;
+  --text-body--line-height: 1.5;
+  --text-small: 0.75rem;
+  --text-small--line-height: 1.4;
+  /* tracked uppercase labels and the canvas's smallest marks */
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 1.3;
+  --text-caption--letter-spacing: 0.12em;
+  --text-caption--font-weight: 500;
+  --text-micro: 0.625rem;
+  --text-micro--line-height: 1.2;
+  --text-micro--letter-spacing: 0.06em;
+
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-link: var(--link);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-glass-border: var(--glass-border);
+  --color-node: var(--node);
+  --color-forge-1: var(--forge-1);
+  --color-forge-2: var(--forge-2);
+  --color-forge-3: var(--forge-3);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.5);
+  --radius-3xl: calc(var(--radius) * 2);
+
+  --shadow-glass: var(--shadow-glass);
+  --shadow-float: var(--shadow-float);
+  --shadow-glow: var(--shadow-glow);
+  --blur-glass: var(--blur-glass);
+  --blur-nav: var(--blur-nav);
+  --ease-out: var(--ease-out);
+  --ease-spring: var(--ease-spring);
 }
-/* The one deliberate exception, and it is a rule of its own: an icon-only button is a circle.
-   It reads as a circle at 20px whatever radius you give it, so say so — and it matches the
-   round remove button already on every card. */
-.close-button,
-.select__clear-button {
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    @apply bg-background font-sans text-body text-foreground antialiased;
+    overflow: hidden;
+  }
+  ::selection {
+    background: oklch(from var(--forge-2) l c h / 0.28);
+  }
+  /* one focus treatment everywhere: an ember ring at 3:1, only for keyboard focus */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* frosted surface used by every floating panel */
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(var(--blur-glass)) saturate(1.4);
+  }
+  .glass-strong {
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(var(--blur-nav)) saturate(1.5);
+  }
+  /* gradient text, used only at ≥ 18px semibold (large text, 3:1) */
+  .text-forge {
+    background: linear-gradient(100deg, var(--text-forge-1), var(--text-forge-2) 55%, var(--text-forge-3));
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: forge-shimmer 9s var(--ease-in-out) infinite alternate;
+  }
+  .bg-forge {
+    background: var(--gradient-forge);
+  }
+  /* the Ember pill: deep gradient so white text holds 4.5:1 on every stop */
+  .bg-forge-deep {
+    background: var(--gradient-forge-deep);
+  }
+  /* a technology's own colour arrives as data; components pass it in as --tint and paint
+     with --ink (see below), never with the raw brand colour */
+  .tint-dot {
+    background: var(--ink);
+  }
+  .tint-text {
+    color: var(--ink);
+  }
+  /* a brand logo as a mask, so it can wear --ink instead of the colour baked into the file */
+  .tint-icon {
+    background: var(--ink);
+    mask: var(--icon) center / contain no-repeat;
+  }
+}
+
+/* Brand colours are data, and plenty of brands are pure white (OpenAI, Vercel), pure black
+   (Pinecone) or pale yellow (Mailchimp) — invisible on one theme or the other. --ink keeps the
+   brand's hue and chroma but clamps its lightness into the band each theme can show:
+   at most 0.52 on paper, at least 0.7 on dark. */
+:root {
+  --ink-l-min: 0;
+  --ink-l-max: 0.52;
+}
+.dark {
+  --ink-l-min: 0.7;
+  --ink-l-max: 1;
+}
+[style*="--tint"] {
+  --ink: oklch(from var(--tint) clamp(var(--ink-l-min), l, var(--ink-l-max)) c h);
+}
+
+/* ---------- aurora: slow drifting glows behind the whole app ---------- */
+.aurora {
+  position: fixed;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(70px);
+}
+.aurora span {
+  position: absolute;
   border-radius: 9999px;
+  animation: aurora-drift var(--duration-aurora) var(--ease-in-out) infinite alternate;
+}
+.aurora span:nth-child(1) {
+  width: 46vw;
+  height: 40vh;
+  left: 8%;
+  top: 4%;
+  background: var(--aurora-1);
+}
+.aurora span:nth-child(2) {
+  width: 38vw;
+  height: 44vh;
+  right: 6%;
+  top: 14%;
+  background: var(--aurora-2);
+  animation-delay: -9s;
+}
+.aurora span:nth-child(3) {
+  width: 42vw;
+  height: 38vh;
+  left: 30%;
+  bottom: 2%;
+  background: var(--aurora-3);
+  animation-delay: -17s;
+}
+.aurora span:nth-child(4) {
+  width: 30vw;
+  height: 30vh;
+  left: -2%;
+  bottom: 12%;
+  background: var(--aurora-4);
+  animation-delay: -4s;
 }
 
-/* React Flow chrome, dark */
+@keyframes aurora-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6vw, 4vh, 0) scale(1.15);
+  }
+}
+@keyframes forge-shimmer {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+@keyframes badge-morph-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Motion is reduced at the source: MotionConfig honours the OS setting for JS animation,
+   and this stops every CSS one, aurora and shimmer included. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =====================================================================================
+   React Flow, themed from the tokens
+   ===================================================================================== */
+.react-flow {
+  --xy-background-color: transparent;
+}
 .react-flow__controls {
-  border-radius: 10px;
-  overflow: hidden; /* so the first and last button inherit the group's corners */
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: blur(var(--blur-glass));
 }
 .react-flow__controls-button {
-  background: #12151a;
-  border-color: rgba(255, 255, 255, 0.1);
-  fill: rgba(255, 255, 255, 0.6);
+  background: var(--glass-strong);
+  border-color: var(--border);
+  fill: var(--muted-foreground);
 }
 .react-flow__controls-button:hover {
-  background: #1b1f26;
+  background: var(--accent);
 }
 .react-flow__minimap {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-glass);
+}
+.react-flow__minimap-mask {
+  fill: oklch(from var(--background) l c h / 0.7);
 }
 .react-flow__node-group {
   pointer-events: all;
@@ -89,26 +490,21 @@ body {
 
 /* ---------- drag: the block stays, a ghost shows where it lands ----------
    React Flow discards the drag's position changes here — the flow is controlled (`nodes`
-   prop) with no `onNodesChange` — so the block you grab never moves. Rather than fight that,
-   it *is* the design: the block stays lit in place, App renders a dashed ghost at the
-   position React Flow reports, and the drop commits the block there.
-   The wires are frozen for the length of the drag (App.tsx stops re-planning, which costs a
-   full orthogonal search over every wire) and re-route once on release, so they fade back
-   to say they are stale rather than looking broken. */
+   prop) with no `onNodesChange` — so the block you grab never moves. App renders a dashed
+   ghost at the position React Flow reports, and the drop commits the block there. The wires
+   are frozen for the length of the drag and re-route once on release, so they fade back. */
 .is-dragging .react-flow__edges {
   opacity: 0.18;
-  transition: opacity 120ms ease-out;
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 .react-flow__node.dragging {
   z-index: 50 !important;
   cursor: grabbing;
 }
-/* The block left behind: dimmed but ringed, so it reads as the one in flight.
-   !important is load-bearing here — TechNode and GroupNode both set `opacity` inline for
-   their filter dimming, and an inline style beats a stylesheet rule without it. */
+/* !important: TechNode and GroupNode set opacity inline for filter dimming */
 .react-flow__node.dragging > div {
   opacity: 0.45 !important;
-  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -120,23 +516,7 @@ body {
   pointer-events: none !important;
 }
 
-/* Faint technology-coloured glows behind the grid, so the canvas is not a flat void.
-   Sits under React Flow's own layers, never over a card. */
-.stack-canvas::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(38rem 26rem at 12% 18%, rgba(97, 218, 251, 0.07), transparent 70%),
-    radial-gradient(34rem 24rem at 82% 14%, rgba(217, 119, 87, 0.06), transparent 70%),
-    radial-gradient(40rem 28rem at 68% 88%, rgba(36, 150, 237, 0.06), transparent 70%),
-    radial-gradient(30rem 22rem at 26% 76%, rgba(234, 75, 113, 0.05), transparent 70%);
-}
-
-/* React Flow ships a default skin for group nodes — a light-grey slab with a 3px radius.
-   That was the outer grey box wrapping our own bordered one. Strip it; GroupNode draws itself. */
+/* React Flow's default group skin is a light-grey slab; GroupNode draws itself. */
 .react-flow__node-group {
   background: transparent !important;
   border: none !important;
@@ -145,10 +525,8 @@ body {
   padding: 0 !important;
 }
 
-/* Paint order must be: group box (0) -> wires (1) -> tech card (2).
-   React Flow puts each edge in its own <svg> at max(nodeZ)+1, which always beat the cards.
-   Keep BOTH containers out of the stacking context so their children interleave by z-index,
-   then pin the edge layer to 1 between the two node layers. */
+/* Paint order: group box (0) -> wires (1) -> tech card (2). Keep both containers out of the
+   stacking context so their children interleave by z-index, then pin edges to 1. */
 .react-flow__edges,
 .react-flow__nodes {
   z-index: auto !important;

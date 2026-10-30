@@ -5,15 +5,35 @@ Antes de crear algo, busca aquí. Cada entrada apunta al código; nunca lo copia
 
 ## Componentes
 
+### Aurora
+- Ruta: src/components/aurora.tsx
+- Para qué: The slow-drifting glow behind the whole app; colours and motion live in index.css.
+- Firma: `export function Aurora()`
+
+### BadgeMorph
+- Ruta: src/components/ruixen/badge-morph.tsx
+- Para qué: A status pill that morphs its width, icon and label between states with springs.
+- Firma: `export function BadgeMorph({ status, label, className }: BadgeMorphProps)`
+
+### ClearDialog
+- Ruta: src/components/dialogs.tsx
+- Para qué: Asks before clearing the canvas. Clear is the one action with no undo behind it — Ctrl+Z only puts back a single removed block — so it names exactly what will be lost.
+- Firma: `export function ClearDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void })`
+
 ### DeleteGuard
-- Ruta: src/components/panels.tsx
-- Para qué: Asks before removing a block that has account details saved on it. */
+- Ruta: src/components/dialogs.tsx
+- Para qué: Asks before removing a block that has account details saved on it.
 - Firma: `export function DeleteGuard()`
 
 ### Drawer
-- Ruta: src/components/panels.tsx
-- Para qué: Right drawer for the selected block: details, problems and its encrypted account fields. */
+- Ruta: src/components/drawer.tsx
+- Para qué: Right floating drawer for the selected block: details, problems and its encrypted account fields.
 - Firma: `export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] })`
+
+### Filters
+- Ruta: src/components/filters.tsx
+- Para qué: The highlight filters in the top bar: build, language, ecosystem and box. One is active at a time.
+- Firma: `export function Filters({ highlight, setHighlight }: { highlight: Highlight; setHighlight: SetHighlight })`
 
 ### GhostNode
 - Ruta: src/components/nodes.tsx
@@ -22,54 +42,98 @@ Antes de crear algo, busca aquí. Cada entrada apunta al código; nunca lo copia
 
 ### GroupNode
 - Ruta: src/components/nodes.tsx
-- Para qué: The coloured box that holds one group of technologies, with its section lanes.
+- Para qué: The frosted box that holds one group of technologies, with its section lanes.
 - Firma: `export function GroupNode({ data }: NodeProps & { data: GroupData })`
 
 ### Inspector
-- Ruta: src/components/panels.tsx
-- Para qué: Bottom strip describing the hovered block, so a tooltip never covers its neighbours. */
+- Ruta: src/components/inspector.tsx
+- Para qué: Bottom glass bar describing the hovered block, so a tooltip never covers its neighbours.
 - Firma: `export function Inspector({ tech, problems }: { tech?: Tech; problems: Problem[] })`
 
+### Mark
+- Ruta: src/components/wordmark.tsx
+- Para qué: The square F mark from the favicon, for places too small for the name.
+- Firma: `export function Mark({ className }: { className?: string })`
+
 ### NeedsPanel
-- Ruta: src/components/panels.tsx
-- Para qué: Lists what the stack is still missing and the technologies that would fill each gap. */
-- Firma: `export function NeedsPanel({ analysis }: { analysis: Analysis })`
+- Ruta: src/components/needs-panel.tsx
+- Para qué: Lists what the stack is still missing and the technologies that would fill each gap.
+- Firma: `export function NeedsPanel({ analysis, shifted }: { analysis: Analysis; shifted: boolean })`
 
 ### Palette
-- Ruta: src/components/panels.tsx
-- Para qué: Left sidebar: searchable catalog grouped by box; click to add or remove a technology. */
+- Ruta: src/components/palette.tsx
+- Para qué: Left floating panel: searchable catalog grouped by box; click to add or remove a technology.
 - Firma: `export function Palette({ onBlocked }: { onBlocked: (msg: string) => void })`
 
 ### REL
 - Ruta: src/components/nodes.tsx
-- Para qué: Colour, label and line style for every relationship type; shared by the wires and the legend. */
-- Firma: `export const REL: Record<Rel, { color: string; label: string; dash?: boolean; both?: boolean }> =`
+- Para qué: Colour token, label and line style for every relationship type; shared by the wires and the legend.
+- Firma: `export const REL: Record<Rel, { stroke: string; label: string; dash?: boolean; both?: boolean }> =`
 
 ### RelEdge
 - Ruta: src/components/nodes.tsx
 - Para qué: Paints one relationship wire along the route planRoutes() chose, with its cardinality marks.
 - Firma: `export function RelEdge({ id, markerStart, markerEnd, data }: EdgeProps & { data?: RelEdgeData })`
 
+### TechIcon
+- Ruta: src/components/nodes.tsx
+- Para qué: A technology's simpleicons.org logo in its own colour, or its initials when there is none.
+- Firma: `export function TechIcon({ tech, className }: { tech: Tech; className?: string })`
+
 ### TechNode
 - Ruta: src/components/nodes.tsx
 - Para qué: One technology card on the canvas: name, icon, language chips and its problem ring.
 - Firma: `export function TechNode({ data }: NodeProps & { data: TechData })`
 
+### ThemeToggle
+- Ruta: src/components/theme-toggle.tsx
+- Para qué: Sun/moon switch between the light and dark token sets; the icon spins as it swaps.
+- Firma: `export function ThemeToggle()`
+
+### Toast
+- Ruta: src/components/toast.tsx
+- Para qué: A glass pill that springs up from the bottom of the canvas; `message` null hides it.
+- Firma: `export function Toast(`
+
 ### TopBar
-- Ruta: src/components/panels.tsx
-- Para qué: Header with stack status, the highlight filter menu, builds, import/export and clear. */
+- Ruta: src/components/top-bar.tsx
+- Para qué: Floating glass header: the name, the highlight filters, stack status, import/export and theme.
 - Firma: `export function TopBar({ problems }: { problems: Problem[] })`
 
-### UndoToast
-- Ruta: src/components/panels.tsx
-- Para qué: Offers to put back the block that was just removed. */
-- Firma: `export function UndoToast()`
+### Wordmark
+- Ruta: src/components/wordmark.tsx
+- Para qué: The StackForge name: ink "Stack", forge-gradient "Forge" with a slow shimmer.
+- Firma: `export function Wordmark({ className }: { className?: string })`
+
+## Hooks
+
+### useTheme
+- Ruta: src/lib/theme.ts
+- Para qué: Light or dark, remembered per browser; `.dark` on <html> is what every token keys off.
+- Firma: `export function useTheme()`
+
+## Utilidades
+
+### tint
+- Ruta: src/lib/utils.ts
+- Para qué: A technology's or group's own colour is catalog data, not a design token, so it reaches the markup as a CSS variable and the `.tint-*` classes (or `var(--tint)`) paint with it.
+- Firma: `export const tint = (thing: { color: string }) => ({ '--tint': thing.color }) as CSSProperties`
 
 ## Tipos
 
+### BadgeMorphProps
+- Ruta: src/components/ruixen/badge-morph.tsx
+- Para qué: Props for BadgeMorph: which state it shows and the words beside the icon.
+- Firma: `export interface BadgeMorphProps`
+
+### BadgeStatus
+- Ruta: src/components/ruixen/badge-morph.tsx
+- Para qué: The five states the status pill can morph between.
+- Firma: `export type BadgeStatus = 'idle' | 'loading' | 'success' | 'warning' | 'error'`
+
 ### GhostData
 - Ruta: src/components/nodes.tsx
-- Para qué: The coloured box that holds one group of technologies, with its section lanes. */ export function GroupNode({ data }: NodeProps & { data: GroupData }) { const group = groupById.get(data.groupId)! return ( <div className="h-full w-full rounded-2xl transition-opacity" style={{ // one box only: black fill, coloured edge, coloured glow. Translucent so wires // crossing underneath stay traceable instead of vanishing. background: 'rgba(4, 6, 9, 0.82)', border: `1px solid ${group.color}66`, boxShadow: `0 0 26px -4px ${group.color}55`, opacity: data.dimmed ? 0.28 : 1, }} > <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest" style={{ height: GROUP_HEADER, paddingLeft: PAD, color: group.color }} > <span className="h-2 w-2 rounded-full" style={{ background: group.color }} /> {group.name} </div> {data.sections.map((s) => ( <div key={s.name} className="absolute text-[9px] font-semibold uppercase tracking-wider text-white/30" style={{ left: PAD, top: s.y + 6 }} > {s.name} </div> ))} </div> ) } /* ---------- drag ghost ---------- The block you grab never moves. React Flow reports the position it *would* take — already clamped to its parent box — and App renders that spot as this outline. On release the real block is committed here and the ghost goes away.
+- Para qué: Props a GhostNode receives: the colour and label of the thing being dragged.
 - Firma: `export interface GhostData extends Record<string, unknown>`
 
 ### GroupData
@@ -86,3 +150,8 @@ Antes de crear algo, busca aquí. Cada entrada apunta al código; nunca lo copia
 - Ruta: src/components/nodes.tsx
 - Para qué: Props a TechNode card receives from the canvas.
 - Firma: `export interface TechData extends Record<string, unknown>`
+
+### Theme
+- Ruta: src/lib/theme.ts
+- Para qué: The two token sets the app can show.
+- Firma: `export type Theme = 'light' | 'dark'`

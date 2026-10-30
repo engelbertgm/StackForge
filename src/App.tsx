@@ -1,5 +1,6 @@
 import {
   Background,
+  BackgroundVariant,
   Controls,
   type Edge,
   type EdgeTypes,
@@ -16,10 +17,19 @@ import {
   ViewportPortal,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Aurora } from '@/components/aurora'
+import { DeleteGuard } from '@/components/dialogs'
+import { Drawer } from '@/components/drawer'
+import { Inspector } from '@/components/inspector'
+import { NeedsPanel } from '@/components/needs-panel'
+import { Palette } from '@/components/palette'
+import { Toast } from '@/components/toast'
+import { TopBar } from '@/components/top-bar'
+import { Button } from '@/components/ui/button'
 import { groupById, stackRules, techById } from './catalog'
 import { GhostNode, GroupNode, REL, RelEdge, TechNode } from './components/nodes'
-import { DeleteGuard, Drawer, Inspector, NeedsPanel, Palette, TopBar, UndoToast } from './components/panels'
 import { type Box, layout, NODE_H, NODE_W } from './layout'
 import { planRoutes, type Rect, type Route } from './routing'
 import { type Analysis, analyze } from './rules'
@@ -39,16 +49,18 @@ const edgeTypes = { rel: RelEdge } as unknown as EdgeTypes
  * ReactFlow's own `fitView` prop fires at init, before the restored stack has been
  * measured, so it fits an empty canvas. Wait for the real measurements instead.
  */
-function FitOnDemand({ tick }: { tick: string }) {
+function FitOnDemand({ tick, drawerOpen }: { tick: string; drawerOpen: boolean }) {
   const { fitView } = useReactFlow()
   // React Flow's own measured pane size. Waiting on a timer after our ResizeObserver was a
   // race — if React Flow had not re-measured yet the fit used the old size and never retried,
   // which is how the bottom of the diagram ended up off-screen. Its store cannot be stale.
   const pane = useStore((s) => `${Math.round(s.width)}x${Math.round(s.height)}`)
   useEffect(() => {
-    const id = requestAnimationFrame(() => void fitView({ padding: 0.08 }))
+    // the canvas runs full-bleed under the glass panels, so frame the stack inside them
+    const padding = { top: '92px', bottom: '84px', left: '316px', right: drawerOpen ? '384px' : '28px' } as const
+    const id = requestAnimationFrame(() => void fitView({ padding }))
     return () => cancelAnimationFrame(id)
-  }, [tick, pane, fitView])
+  }, [tick, pane, fitView, drawerOpen])
   return null
 }
 
@@ -69,11 +81,9 @@ function AlignmentGuides({ guides }: { guides?: Guide[] }) {
       {guides.map((g) => (
         <div
           key={`${g.axis}${g.at}`}
+          className="pointer-events-none absolute bg-ring"
           style={{
-            position: 'absolute',
-            pointerEvents: 'none',
-            background: '#22d3ee',
-            boxShadow: `0 0 ${6 / zoom}px #22d3ee`,
+            boxShadow: `0 0 ${6 / zoom}px var(--ring)`,
             ...(g.axis === 'x'
               ? { left: g.at, top: g.from - over, width: thick, height: g.to - g.from + over * 2 }
               : { left: g.from - over, top: g.at, width: g.to - g.from + over * 2, height: thick }),
@@ -138,7 +148,7 @@ function relEdge(
   const active = touches(e, selected)
   const both = style.both || e.both
   const bothEndsPass = passes(techById.get(e.source)!) && passes(techById.get(e.target)!)
-  const marker = { type: MarkerType.ArrowClosed, color: style.color, width: 16, height: 16 }
+  const marker = { type: MarkerType.ArrowClosed, color: style.stroke, width: 16, height: 16 }
   return {
     id: e.id,
     source: e.source,
@@ -154,7 +164,7 @@ function relEdge(
 function Canvas() {
   const { added, nodePos, groupPos, selected, highlight, fitTick, select, setNodePos, setGroupPos, requestRemove } =
     useStack()
-  const [toast, setToast] = useState<string | null>(null)
+
   const [hovered, setHovered] = useState<string | null>(null)
   /** where the block being dragged would land — null whenever no drag is in flight */
   const [ghost, setGhost] = useState<{ id: string; x: number; y: number; guides: Guide[] } | null>(null)
@@ -258,7 +268,7 @@ function Canvas() {
         selectable: false,
         /* above the cards, so the landing spot is never hidden behind one */
         zIndex: 6,
-        data: { color: look.color ?? '#8b93a1', label: look.label },
+        data: { color: look.color ?? 'var(--ghost-fallback)', label: look.label },
       },
     ]
   }, [nodes, ghost, boxes])
@@ -351,98 +361,146 @@ function Canvas() {
   const selectedTech = selected ? techById.get(selected) : undefined
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[#0b0d10] text-white">
-      <TopBar problems={problems} />
+    <div className="relative h-dvh overflow-hidden bg-background text-foreground">
+      <Aurora />
 
-      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-        <Palette
-          onBlocked={(m) => {
-            setToast(m)
-            setTimeout(() => setToast(null), 3500)
+      {/* the canvas runs full-bleed; every panel floats over it as glass */}
+      <main ref={canvasRef} className="absolute inset-0">
+        <ReactFlow
+          className={dragging ? 'is-dragging' : undefined}
+          nodes={nodesWithGhost}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onNodeClick={(_, n) => !n.id.startsWith('group:') && select(n.id)}
+          onPaneClick={() => select(null)}
+          /* n.position is the position the block *would* take, already clamped to its box */
+          onNodeDragStart={(e, n) => setGhost({ id: n.id, ...resolveDrag(n, e.altKey) })}
+          onNodeDrag={(e, n) => setGhost({ id: n.id, ...resolveDrag(n, e.altKey) })}
+          onNodeDragStop={(e, n) => {
+            setGhost(null)
+            // resolve once more rather than trusting state: same inputs, same answer, and
+            // the block lands exactly where the ghost was standing
+            const { x, y } = resolveDrag(n, e.altKey)
+            if (n.id.startsWith('group:')) setGroupPos(n.id.slice(6), { x, y })
+            else setNodePos(n.id, { x, y })
           }}
-        />
-
-        {/* the canvas owns its own box: the strip below is a sibling, not an overlay, so
-            the measured height is the height that is actually visible and fitView lands right */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <main ref={canvasRef} className="stack-canvas relative min-h-0 min-w-0 flex-1 overflow-hidden">
-            {!added.length && (
-              <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center text-center text-white/35">
-                <div>
-                  <div className="text-[15px] font-semibold text-white/60">Add a technology to start</div>
-                  <div className="mt-1 text-[12px]">
-                    Its box appears on its own. Click any block to trace what it connects to.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <ReactFlow
-              className={dragging ? 'is-dragging' : undefined}
-              nodes={nodesWithGhost}
-              edges={edges}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              onNodeClick={(_, n) => !n.id.startsWith('group:') && select(n.id)}
-              onPaneClick={() => select(null)}
-              /* n.position is the position the block *would* take, already clamped to its box */
-              onNodeDragStart={(e, n) => setGhost({ id: n.id, ...resolveDrag(n, e.altKey) })}
-              onNodeDrag={(e, n) => setGhost({ id: n.id, ...resolveDrag(n, e.altKey) })}
-              onNodeDragStop={(e, n) => {
-                setGhost(null)
-                // resolve once more rather than trusting state: same inputs, same answer, and
-                // the block lands exactly where the ghost was standing
-                const { x, y } = resolveDrag(n, e.altKey)
-                if (n.id.startsWith('group:')) setGroupPos(n.id.slice(6), { x, y })
-                else setNodePos(n.id, { x, y })
-              }}
-              nodesConnectable={false}
-              proOptions={{ hideAttribution: true }}
-              fitView
-              minZoom={0.15}
-            >
-              {/* the boxes' own extent, so a re-column refits even when the pane size did not change */}
-              <AlignmentGuides guides={ghost?.guides} />
-              <FitOnDemand tick={`${fitTick}|${boxes.map((b) => `${b.x},${b.y},${b.w},${b.h}`).join(';')}`} />
-              <Background color="#212631" gap={26} size={1} />
-              <Controls showInteractive={false} />
-              <MiniMap
-                pannable
-                zoomable
-                maskColor="rgba(0,0,0,0.7)"
-                nodeColor={(n) =>
-                  n.id.startsWith('group:')
-                    ? (groupById.get(n.id.slice(6))?.color ?? '#333') + '55'
-                    : (techById.get(n.id)?.color ?? '#666')
-                }
-                style={{ background: '#0d1014' }}
-              />
-            </ReactFlow>
-
-            <NeedsPanel analysis={analysis} />
-            <UndoToast />
-            <DeleteGuard />
-
-            {selectedTech && (
-              <div className="absolute right-0 top-0 bottom-0 z-30 flex">
-                <Drawer tech={selectedTech} problems={problems.filter((p) => p.techId === selectedTech.id)} />
-              </div>
-            )}
-
-            {toast && (
-              <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-lg border border-red-500/50 bg-red-500/15 px-4 py-2 text-[12px] text-red-200 backdrop-blur">
-                {toast}
-              </div>
-            )}
-          </main>
-
-          <Inspector
-            tech={hovered ? techById.get(hovered) : undefined}
-            problems={hovered ? problems.filter((p) => p.techId === hovered) : []}
+          nodesConnectable={false}
+          proOptions={{ hideAttribution: true }}
+          fitView
+          minZoom={0.15}
+        >
+          <AlignmentGuides guides={ghost?.guides} />
+          {/* the boxes' own extent, so a re-column refits even when the pane size did not change */}
+          <FitOnDemand
+            tick={`${fitTick}|${boxes.map((b) => `${b.x},${b.y},${b.w},${b.h}`).join(';')}`}
+            drawerOpen={!!selectedTech}
           />
-        </div>
-      </div>
+          <Background variant={BackgroundVariant.Dots} color="var(--canvas-dot)" gap={24} size={1.4} />
+          {added.length > 0 && (
+            <Controls showInteractive={false} position="bottom-left" className="!bottom-[4.5rem] !left-[19.5rem]" />
+          )}
+          {!selectedTech && added.length > 0 && (
+            <MiniMap
+              pannable
+              zoomable
+              position="bottom-right"
+              className="!bottom-[4.5rem] !right-1"
+              nodeColor={minimapColor}
+            />
+          )}
+        </ReactFlow>
+      </main>
+
+      <EmptyState show={!added.length} />
+      <Overlays analysis={analysis} selectedTech={selectedTech} hovered={hovered} />
     </div>
+  )
+}
+
+const minimapColor = (n: Node) =>
+  n.id.startsWith('group:')
+    ? `${groupById.get(n.id.slice(6))?.color ?? ''}55`
+    : (techById.get(n.id)?.color ?? 'var(--muted-foreground)')
+
+/** Every glass panel that floats over the canvas, plus the toasts and the delete guard. */
+function Overlays({
+  analysis,
+  selectedTech,
+  hovered,
+}: {
+  analysis: Analysis
+  selectedTech?: Tech
+  hovered: string | null
+}) {
+  const { problems } = analysis
+  const [toast, setToast] = useState<string | null>(null)
+
+  const { lastRemoved, undoRemove, dismissUndo } = useStack()
+  const lastRemovedName = lastRemoved ? (techById.get(lastRemoved.id)?.name ?? lastRemoved.id) : null
+  const problemsOf = (id?: string | null) => (id ? problems.filter((p) => p.techId === id) : [])
+
+  // the undo offer stands for eight seconds, then the removal is final
+  useEffect(() => {
+    if (!lastRemoved) return
+    const t = setTimeout(dismissUndo, 8000)
+    return () => clearTimeout(t)
+  }, [lastRemoved, dismissUndo])
+
+  return (
+    <>
+      <TopBar problems={problems} />
+      <Palette
+        onBlocked={(m) => {
+          setToast(m)
+          setTimeout(() => setToast(null), 3500)
+        }}
+      />
+      <NeedsPanel analysis={analysis} shifted={!!selectedTech} />
+      <AnimatePresence>
+        {selectedTech && <Drawer key={selectedTech.id} tech={selectedTech} problems={problemsOf(selectedTech.id)} />}
+      </AnimatePresence>
+      <Inspector tech={hovered ? techById.get(hovered) : undefined} problems={problemsOf(hovered)} />
+
+      <Toast message={toast} tone="danger" />
+      <Toast
+        message={!toast && lastRemovedName ? `Removed ${lastRemovedName}` : null}
+        action={
+          <Button variant="ghost" size="xs" className="text-link" onClick={undoRemove}>
+            Undo
+          </Button>
+        }
+        onDismiss={dismissUndo}
+      />
+      <DeleteGuard />
+    </>
+  )
+}
+
+/** The first screen: an editorial headline over the empty canvas, gone as soon as a block lands. */
+function EmptyState({ show }: { show: boolean }) {
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="pointer-events-none absolute inset-x-6 bottom-28 left-[21rem] z-[1]"
+        >
+          <p className="text-caption uppercase text-muted-foreground">Visual stack builder</p>
+          <h2 className="mt-3 max-w-4xl text-display text-foreground">
+            Forge your stack.
+            <span className="block text-subtle-foreground">See what breaks before it ships.</span>
+          </h2>
+          <p className="mt-4 max-w-md text-body text-muted-foreground">
+            Pick a technology from the catalog. StackForge shows what conflicts, what is missing and what connects — in
+            your browser, with nothing to sign up for.
+          </p>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 

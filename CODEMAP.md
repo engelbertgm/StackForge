@@ -14,11 +14,14 @@ Framework: vite-react. Para piezas reutilizables, ver REGISTRY.md.
 | `tests/` | Tests de integración y end-to-end | Código de producción |
 | `src/catalog/` | — | — |
 | `src/components/` | Componentes reutilizables; ui/ = sistema de diseño (shadcn) | Fetch de datos, lógica de negocio, páginas |
+| `src/design/` | — | — |
+| `src/lib/` | Utilidades y clientes (supabase, stripe, fetchers) | Componentes de UI |
 
 ## Puntos de entrada
 
-- **Rutas:** `/`
-- **Configuración:** `vite.config.ts`, `tsconfig.json`
+- **Rutas:** `/`, `/design-system`, `/docs/design/identity-lab`
+- **Configuración:** `vite.config.ts`, `components.json`, `tsconfig.json`, `vercel.json`
+- **Tokens de diseño:** `src/lib/theme.ts`
 
 ## Convenciones
 

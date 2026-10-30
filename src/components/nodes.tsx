@@ -1,5 +1,7 @@
 import { BaseEdge, type EdgeProps, Handle, type NodeProps, Position } from '@xyflow/react'
-import { useState } from 'react'
+import { XIcon } from 'lucide-react'
+import { type CSSProperties, useEffect, useState } from 'react'
+import { cn, tint } from '@/lib/utils'
 import { groupById } from '../catalog'
 import { GROUP_HEADER, NODE_H, NODE_W, PAD } from '../layout'
 import type { Route } from '../routing'
@@ -8,32 +10,31 @@ import type { Card, Problem, Rel, Tech } from '../types'
 /* ---------- relationship styling ----------
  * `dash` marks a *referential* link — Next.js is built on React, Vitest tests Vite.
  * Solid lines are real runtime dependencies: something requires, reads or deploys something else.
- * Direction is uniform: the arrow points at what you depend on.
+ * Direction is uniform: the arrow points at what you depend on. Colours are --rel-* tokens,
+ * deepened in the light theme so every wire holds 3:1 on paper.
  */
-/** Colour, label and line style for every relationship type; shared by the wires and the legend. */
-export const REL: Record<Rel, { color: string; label: string; dash?: boolean; both?: boolean }> = {
-  extends: { color: '#a78bfa', label: 'builds on', dash: true },
-  builds: { color: '#a78bfa', label: 'builds', dash: true },
-  tests: { color: '#34d399', label: 'tests', dash: true },
-  styles: { color: '#f472b6', label: 'styled with', dash: true },
-  types: { color: '#60a5fa', label: 'typed by', dash: true },
-  monitors: { color: '#fb923c', label: 'monitors', dash: true },
-  tracks: { color: '#fb923c', label: 'tracks', dash: true },
+/** Colour token, label and line style for every relationship type; shared by the wires and the legend. */
+export const REL: Record<Rel, { stroke: string; label: string; dash?: boolean; both?: boolean }> = {
+  extends: { stroke: 'var(--rel-extends)', label: 'builds on', dash: true },
+  builds: { stroke: 'var(--rel-extends)', label: 'builds', dash: true },
+  tests: { stroke: 'var(--rel-tests)', label: 'tests', dash: true },
+  styles: { stroke: 'var(--rel-styles)', label: 'styled with', dash: true },
+  types: { stroke: 'var(--rel-types)', label: 'typed by', dash: true },
+  monitors: { stroke: 'var(--rel-monitors)', label: 'monitors', dash: true },
+  tracks: { stroke: 'var(--rel-monitors)', label: 'tracks', dash: true },
 
-  /* The three solid data links used to be cyan, the same cyan, and a teal ten degrees off it,
-     which made them unreadable side by side. They are a hue apart each now — cyan, lime,
-     indigo — and no closer than 50° to any other solid line (amber deploys, fuchsia
-     automates). The dashed families keep their colours; a dash already separates them. */
-  requires: { color: '#22d3ee', label: 'requires' },
-  consumes: { color: '#a3e635', label: 'reads from' },
-  queries: { color: '#818cf8', label: 'queries', both: true },
-  syncs: { color: '#818cf8', label: 'syncs with', both: true },
-  deploys: { color: '#fbbf24', label: 'deploys' },
-  hosts: { color: '#fbbf24', label: 'hosts' },
-  orchestrates: { color: '#fbbf24', label: 'orchestrates' },
-  automates: { color: '#e879f9', label: 'automates' },
+  /* the solid data links are a hue apart each — cyan, lime, indigo — and no closer than 50°
+     to any other solid line (amber deploys, fuchsia automates) */
+  requires: { stroke: 'var(--rel-requires)', label: 'requires' },
+  consumes: { stroke: 'var(--rel-consumes)', label: 'reads from' },
+  queries: { stroke: 'var(--rel-queries)', label: 'queries', both: true },
+  syncs: { stroke: 'var(--rel-queries)', label: 'syncs with', both: true },
+  deploys: { stroke: 'var(--rel-deploys)', label: 'deploys' },
+  hosts: { stroke: 'var(--rel-deploys)', label: 'hosts' },
+  orchestrates: { stroke: 'var(--rel-deploys)', label: 'orchestrates' },
+  automates: { stroke: 'var(--rel-automates)', label: 'automates' },
 
-  conflicts: { color: '#ef4444', label: 'incompatible', dash: true, both: true },
+  conflicts: { stroke: 'var(--rel-conflicts)', label: 'incompatible', dash: true, both: true },
 }
 
 const CARD_ENDS: Record<Card, [string, string]> = {
@@ -45,31 +46,44 @@ const CARD_ENDS: Record<Card, [string, string]> = {
 
 /* ---------- brand icon, falls back to initials when the slug is wrong or offline ---------- */
 
-function Icon({ tech }: { tech: Tech }) {
+/**
+ * A technology's simpleicons.org logo in its own colour, or its initials when there is none.
+ * The logo is a mask painted with --ink, so a white or black brand mark stays visible on both themes.
+ */
+export function TechIcon({ tech, className }: { tech: Tech; className?: string }) {
+  const src = tech.icon ? `https://cdn.simpleicons.org/${tech.icon}` : null
   const [failed, setFailed] = useState(false)
+  // a mask has no error event, so probe the same URL to learn whether the slug exists
+  useEffect(() => {
+    if (!src) return
+    const probe = new Image()
+    probe.onerror = () => setFailed(true)
+    probe.src = src
+  }, [src])
   const initials = tech.name
     .replace(/[^A-Za-z0-9]/g, '')
     .slice(0, 2)
     .toUpperCase()
 
-  if (!tech.icon || failed)
+  if (!src || failed)
     return (
       <span
-        className="grid h-5 w-5 shrink-0 place-items-center rounded text-[9px] font-bold"
-        style={{ background: tech.color + '33', color: tech.color }}
+        aria-hidden="true"
+        style={tint(tech)}
+        className={cn(
+          'grid size-5 shrink-0 place-items-center rounded-md bg-[color-mix(in_oklch,var(--ink)_22%,transparent)] font-mono text-micro font-medium text-foreground',
+          className,
+        )}
       >
         {initials}
       </span>
     )
 
   return (
-    <img
-      src={`https://cdn.simpleicons.org/${tech.icon}/${tech.color.replace('#', '')}`}
-      alt=""
-      width={20}
-      height={20}
-      className="h-5 w-5 shrink-0"
-      onError={() => setFailed(true)}
+    <span
+      aria-hidden="true"
+      className={cn('tint-icon size-5 shrink-0', className)}
+      style={{ ...tint(tech), '--icon': `url(${src})` } as CSSProperties}
     />
   )
 }
@@ -87,14 +101,11 @@ export interface TechData extends Record<string, unknown> {
 }
 
 /** the card's outline: red for an error, amber for a warning, its own colour while active */
-function ringColor(error: boolean, warn: boolean, active: boolean, color: string): string | null {
-  if (error) return '#ef4444'
-  if (warn) return '#f59e0b'
-  return active ? color : null
+function ringClass(error: boolean, warn: boolean, active: boolean): string {
+  if (error) return 'ring-2 ring-destructive shadow-[0_0_20px_-4px_var(--destructive)]'
+  if (warn) return 'ring-2 ring-warning shadow-[0_0_20px_-6px_var(--warning)]'
+  return active ? 'ring-2 ring-(--ink) shadow-[0_0_24px_-4px_var(--ink)]' : 'ring-1 ring-glass-border shadow-xs'
 }
-
-const cardShadow = (ring: string | null) =>
-  ring ? `0 0 0 1.5px ${ring}, 0 0 16px -3px ${ring}, 0 2px 6px rgba(0,0,0,0.6)` : '0 2px 6px rgba(0,0,0,0.5)'
 
 /** One technology card on the canvas: name, icon, language chips and its problem ring. */
 export function TechNode({ data }: NodeProps & { data: TechData }) {
@@ -102,51 +113,47 @@ export function TechNode({ data }: NodeProps & { data: TechData }) {
   const error = problems.some((p) => p.severity === 'error')
   const warn = !error && problems.length > 0
 
-  // opaque on purpose: wires pass behind the card, never through the text
-  const ring = ringColor(error, warn, active, tech.color)
-
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: hover only feeds the inspector panel; React Flow wraps the card in its own focusable, clickable node
     <div
-      className="group relative rounded-lg px-2.5 py-2 transition-opacity"
+      className={cn(
+        // opaque on purpose: wires pass behind the card, never through the text
+        'group relative rounded-xl bg-node px-2.5 py-2 transition-[opacity,box-shadow] duration-200',
+        ringClass(error, warn, active),
+      )}
       onMouseEnter={() => onHover(tech.id)}
       onMouseLeave={() => onHover(null)}
-      style={{
-        width: NODE_W,
-        height: NODE_H,
-        opacity: dimmed ? 0.14 : 1,
-        background: '#171b22',
-        boxShadow: cardShadow(ring),
-      }}
+      style={{ ...tint(tech), width: NODE_W, height: NODE_H, opacity: dimmed ? 0.14 : 1 }}
     >
       <Handle type="target" position={Position.Left} className="!opacity-0" />
       <Handle type="source" position={Position.Right} className="!opacity-0" />
 
       <button
         type="button"
-        title={`Remove ${tech.name}`}
+        aria-label={`Remove ${tech.name}`}
         onClick={(e) => {
           e.stopPropagation()
           onRemove(tech.id)
         }}
-        className="absolute -right-2 -top-2 z-20 hidden h-[18px] w-[18px] items-center justify-center rounded-full bg-[#2a3038] text-white/70 shadow-md ring-1 ring-black/40 hover:bg-red-500 hover:text-white group-hover:flex"
+        className="absolute -right-2 -top-2 z-20 hidden size-5 items-center justify-center rounded-full bg-foreground text-background shadow-xs transition-transform hover:scale-110 hover:bg-destructive hover:text-primary-foreground group-hover:flex"
       >
-        <svg viewBox="0 0 16 16" width="9" height="9" aria-hidden="true">
-          <path d="M2 2 L14 14 M14 2 L2 14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-        </svg>
+        <XIcon className="size-3" />
       </button>
 
-      <div className="flex items-center gap-2">
-        <Icon tech={tech} />
-        <span className="truncate text-[12px] font-semibold text-white/90">{tech.name}</span>
+      {/* long names (Supabase Edge Functions, GitHub Issues & Projects) wrap to a second line */}
+      <div className="flex items-start gap-2">
+        <TechIcon tech={tech} />
+        <span title={tech.name} className="line-clamp-2 text-small leading-tight font-medium text-foreground">
+          {tech.name}
+        </span>
         {(error || warn) && (
-          <span className={`ml-auto text-[11px] leading-none ${error ? 'text-red-400' : 'text-amber-400'}`}>!</span>
+          <span className={cn('ml-auto text-small font-semibold', error ? 'text-destructive' : 'text-warning')}>!</span>
         )}
       </div>
 
       <div className="mt-1.5 flex flex-wrap gap-1">
         {tech.langs.slice(0, 3).map((l) => (
-          <span key={l} className="rounded bg-white/[0.07] px-1 py-px text-[9px] uppercase tracking-wide text-white/45">
+          <span key={l} className="rounded-md bg-muted px-1 py-px font-mono text-micro uppercase text-muted-foreground">
             {l}
           </span>
         ))}
@@ -164,32 +171,26 @@ export interface GroupData extends Record<string, unknown> {
   dimmed: boolean
 }
 
-/** The coloured box that holds one group of technologies, with its section lanes. */
+/** The frosted box that holds one group of technologies, with its section lanes. */
 export function GroupNode({ data }: NodeProps & { data: GroupData }) {
   const group = groupById.get(data.groupId)!
   return (
     <div
-      className="h-full w-full rounded-2xl transition-opacity"
-      style={{
-        // one box only: black fill, coloured edge, coloured glow. Translucent so wires
-        // crossing underneath stay traceable instead of vanishing.
-        background: 'rgba(4, 6, 9, 0.82)',
-        border: `1px solid ${group.color}66`,
-        boxShadow: `0 0 26px -4px ${group.color}55`,
-        opacity: data.dimmed ? 0.28 : 1,
-      }}
+      // translucent so wires crossing underneath stay traceable instead of vanishing
+      className="h-full w-full rounded-3xl border border-[color-mix(in_oklch,var(--ink)_40%,transparent)] bg-(--group-fill) shadow-[0_0_32px_-8px_color-mix(in_oklch,var(--ink)_45%,transparent)] backdrop-blur-sm transition-opacity duration-300"
+      style={{ ...tint(group), opacity: data.dimmed ? 0.28 : 1 }}
     >
       <div
-        className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest"
-        style={{ height: GROUP_HEADER, paddingLeft: PAD, color: group.color }}
+        className="flex items-center gap-2 text-caption uppercase text-foreground"
+        style={{ height: GROUP_HEADER, paddingInlineStart: PAD }}
       >
-        <span className="h-2 w-2 rounded-full" style={{ background: group.color }} />
+        <span className="tint-dot size-2 rounded-full" />
         {group.name}
       </div>
       {data.sections.map((s) => (
         <div
           key={s.name}
-          className="absolute text-[9px] font-semibold uppercase tracking-wider text-white/30"
+          className="absolute font-mono text-micro uppercase text-muted-foreground"
           style={{ left: PAD, top: s.y + 6 }}
         >
           {s.name}
@@ -204,6 +205,7 @@ export function GroupNode({ data }: NodeProps & { data: GroupData }) {
  * clamped to its parent box — and App renders that spot as this outline. On release the real
  * block is committed here and the ghost goes away.
  */
+/** Props a GhostNode receives: the colour and label of the thing being dragged. */
 export interface GhostData extends Record<string, unknown> {
   color: string
   label: string
@@ -213,16 +215,10 @@ export interface GhostData extends Record<string, unknown> {
 export function GhostNode({ data }: NodeProps & { data: GhostData }) {
   return (
     <div
-      className="pointer-events-none flex h-full w-full items-center justify-center rounded-md"
-      style={{
-        border: `2px dashed ${data.color}`,
-        background: `${data.color}1f`,
-        boxShadow: `0 0 22px -6px ${data.color}`,
-      }}
+      className="pointer-events-none flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-(--ink) bg-[color-mix(in_oklch,var(--ink)_12%,transparent)] shadow-[0_0_22px_-6px_var(--ink)]"
+      style={tint(data)}
     >
-      <span className="truncate px-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: data.color }}>
-        {data.label}
-      </span>
+      <span className="truncate px-2 text-caption uppercase text-foreground">{data.label}</span>
     </div>
   )
 }
@@ -241,15 +237,20 @@ export interface RelEdgeData extends Record<string, unknown> {
   route?: Route
 }
 
+const wireOpacity = (d: RelEdgeData) => {
+  if (d.dimmed) return 0.06
+  return d.active ? 1 : 0.5
+}
+
 /** Paints one relationship wire along the route planRoutes() chose, with its cardinality marks. */
 export function RelEdge({ id, markerStart, markerEnd, data }: EdgeProps & { data?: RelEdgeData }) {
   if (!data?.route) return null
   const { route } = data
-  const style = REL[data.rel]
+  const rel = REL[data.rel]
   const ends = data.card ? CARD_ENDS[data.card] : null
-  const opacity = data.dimmed ? 0.06 : data.active ? 1 : 0.4
+  const opacity = wireOpacity(data)
   // one speed for every wire: a short hop no longer looks like the dot bouncing on the spot
-  const dur = Math.min(3.4, Math.max(0.7, route.len / 190)).toFixed(2) + 's'
+  const dur = `${Math.min(3.4, Math.max(0.7, route.len / 190)).toFixed(2)}s`
 
   return (
     <>
@@ -262,9 +263,9 @@ export function RelEdge({ id, markerStart, markerEnd, data }: EdgeProps & { data
         /* without this React Flow lays a 20px invisible hit path over the blocks and eats their clicks */
         interactionWidth={0}
         style={{
-          stroke: style.color,
-          strokeWidth: data.active ? 2.2 : 1.2,
-          strokeDasharray: style.dash ? '6 4' : undefined,
+          stroke: rel.stroke,
+          strokeWidth: data.active ? 2.2 : 1.3,
+          strokeDasharray: rel.dash ? '6 4' : undefined,
           opacity,
           fill: 'none',
         }}
@@ -273,14 +274,14 @@ export function RelEdge({ id, markerStart, markerEnd, data }: EdgeProps & { data
       {ends && !data.dimmed && (
         /* the halo keeps the mark readable even where a wire does pass under it */
         <g
-          fill={style.color}
-          stroke="#0b0d10"
+          style={{ fill: rel.stroke, stroke: 'var(--mark-halo)' }}
           strokeWidth="3"
           paintOrder="stroke"
           fontSize="10"
-          fontWeight="700"
+          fontWeight="600"
           textAnchor="middle"
           opacity={opacity}
+          className="font-mono"
         >
           <text x={route.ls.x} y={route.ls.y}>
             {ends[0]}
@@ -294,11 +295,11 @@ export function RelEdge({ id, markerStart, markerEnd, data }: EdgeProps & { data
       {/* travelling dots exist only while this edge is selected; a mutual link flows both ways */}
       {data.active && (
         <>
-          <circle r="4" fill={style.color}>
+          <circle r="4" style={{ fill: rel.stroke }}>
             <animateMotion dur={dur} repeatCount="indefinite" path={route.path} />
           </circle>
           {data.both && (
-            <circle r="4" fill={style.color}>
+            <circle r="4" style={{ fill: rel.stroke }}>
               <animateMotion
                 dur={dur}
                 repeatCount="indefinite"
