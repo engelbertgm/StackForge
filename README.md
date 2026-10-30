@@ -9,9 +9,6 @@
 </p>
 
 <p align="center">
-  <a href="https://stackforge.vercel.app" target="_blank">
-    <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Live demo" />
-  </a>
   <a href="https://github.com/engelbertgm/StackForge/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/engelbertgm/StackForge/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=ci" alt="CI" />
   </a>
@@ -154,7 +151,8 @@ warnings and the search all follow.
 | Explained search | ✅ Done, covered by `search.test.ts` |
 | Glass and aurora redesign on design tokens, light and dark | ✅ Done, contrast checked by `contrast.test.ts` |
 | Technology profiles (licence, pricing, hosting, pros, cons) | 🟡 48 of 366 — Frontend done, 14 boxes to go |
-| Process checklist ([mep](https://github.com/engelbertgm/Mise-en-place)) | 🟡 Sub-phase `foundation.setup` active — see [BRIEF.md](BRIEF.md) |
+| Process checklist ([mep](https://github.com/engelbertgm/Mise-en-place)) | 🟡 Sub-phase `foundation.setup` active — see [BRIEF.md](BRIEF.md). Its CI workflow fails until the 🔴 items close |
+| Hosting | ⚪ Not deployed. Runs locally with `pnpm dev`; `vercel.json` is prepared for a future Vercel deploy |
 
 **Next up:** profiles for the remaining boxes, then closing `foundation.setup` in the brief.
 
@@ -196,7 +194,7 @@ secrets, Biome checks staged files, and commitlint enforces
 `brew install gitleaks`.
 
 CI runs `check`, `lint`, `typecheck`, `knip`, `dup` and `build` on every push, alongside
-CodeQL and the mep checklist workflow.
+CodeQL and the mep checklist workflow. `ci` and CodeQL pass; mep fails until its 🔴 items close.
 
 ## Privacy
 
@@ -299,7 +297,6 @@ profile with an unknown value, an undated file, or no pros or cons.
 | ![Lucide](https://img.shields.io/badge/Lucide-F56565?style=flat-square&logo=lucide&logoColor=white) | UI icons |
 | ![Simple Icons](https://img.shields.io/badge/Simple%20Icons-111111?style=flat-square&logo=simpleicons&logoColor=white) | Brand logos on the blocks, loaded from `cdn.simpleicons.org` |
 | ![Inter](https://img.shields.io/badge/Inter%20%2B%20Geist%20Mono-000000?style=flat-square&logo=googlefonts&logoColor=white) | Self-hosted variable fonts via Fontsource |
-| ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white) | Static hosting |
 
 Class names merge through [`cn`](https://www.npmjs.com/package/cn), a compiled drop-in for
 clsx + tailwind-merge, extended in `src/lib/utils.ts` with the design scale's text sizes.
