@@ -7,8 +7,8 @@ By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Before you start
 
-- **Found a bug?** Open a [bug report](https://github.com/e-mdj7/StackForge/issues/new?template=bug_report.yml).
-- **Missing or wrong technology?** Open a [catalog request](https://github.com/e-mdj7/StackForge/issues/new?template=catalog_request.yml), or skip the issue and send the pull request.
+- **Found a bug?** Open a [bug report](https://github.com/engelbertgm/StackForge/issues/new?template=bug_report.yml).
+- **Missing or wrong technology?** Open a [catalog request](https://github.com/engelbertgm/StackForge/issues/new?template=catalog_request.yml), or skip the issue and send the pull request.
 - **Bigger change** (new rule, new box, UI or routing behavior)? Open an issue first so we can agree on the approach before you write it.
 
 ## Setup
@@ -16,7 +16,7 @@ By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 Requires Node 20+ and [pnpm](https://pnpm.io).
 
 ```bash
-git clone https://github.com/e-mdj7/StackForge.git
+git clone https://github.com/engelbertgm/StackForge.git
 cd StackForge
 pnpm install
 pnpm dev            # http://localhost:5173

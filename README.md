@@ -12,8 +12,8 @@
   <a href="https://stackforge.vercel.app" target="_blank">
     <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Live demo" />
   </a>
-  <a href="https://github.com/e-mdj7/StackForge/actions/workflows/ci.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/e-mdj7/StackForge/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=ci" alt="CI" />
+  <a href="https://github.com/engelbertgm/StackForge/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/engelbertgm/StackForge/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=ci" alt="CI" />
   </a>
   <a href="#project-status">
     <img src="https://img.shields.io/badge/version-0.3.0-informational?style=flat-square" alt="Version 0.3.0" />
@@ -163,7 +163,7 @@ warnings and the search all follow.
 Requires Node 20+ and [pnpm](https://pnpm.io).
 
 ```bash
-git clone https://github.com/e-mdj7/StackForge.git
+git clone https://github.com/engelbertgm/StackForge.git
 cd StackForge
 pnpm install
 pnpm dev            # http://localhost:5173

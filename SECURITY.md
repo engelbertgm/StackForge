@@ -9,7 +9,7 @@ Only the latest release on `main` is supported. Fixes are not backported.
 Please do not open a public issue for security problems.
 
 Report it privately through
-[GitHub private vulnerability reporting](https://github.com/e-mdj7/StackForge/security/advisories/new).
+[GitHub private vulnerability reporting](https://github.com/engelbertgm/StackForge/security/advisories/new).
 Include what you found, steps to reproduce, and the version or commit you tested.
 
 You should get a reply within 7 days. If the report is confirmed, the fix ships in a new
