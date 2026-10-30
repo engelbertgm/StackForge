@@ -27,8 +27,8 @@ Antes de crear algo, busca aquí. Cada entrada apunta al código; nunca lo copia
 
 ### Drawer
 - Ruta: src/components/drawer.tsx
-- Para qué: Right floating drawer for the selected block: details, problems and its encrypted account fields.
-- Firma: `export function Drawer({ tech, problems }: { tech: Tech; problems: Problem[] })`
+- Para qué: Right floating drawer for one technology: what it is, licence, pricing and hosting, pros and cons, how it fits the current stack, and — once it is on the canvas — its account details. Opened from a card on the canvas, or from the palette to look before adding.
+- Firma: `export function Drawer(`
 
 ### Filters
 - Ruta: src/components/filters.tsx
@@ -65,6 +65,11 @@ Antes de crear algo, busca aquí. Cada entrada apunta al código; nunca lo copia
 - Para qué: Left floating panel: searchable catalog grouped by box; click to add or remove a technology.
 - Firma: `export function Palette({ onBlocked }: { onBlocked: (msg: string) => void })`
 
+### ProfileSection
+- Ruta: src/components/tech-profile.tsx
+- Para qué: Licence, pricing and hosting badges plus pros and cons — or a note when the tech has no profile yet.
+- Firma: `export function ProfileSection({ tech }: { tech: Tech })`
+
 ### REL
 - Ruta: src/components/nodes.tsx
 - Para qué: Colour token, label and line style for every relationship type; shared by the wires and the legend.
@@ -75,9 +80,14 @@ Antes de crear algo, busca aquí. Cada entrada apunta al código; nunca lo copia
 - Para qué: Paints one relationship wire along the route planRoutes() chose, with its cardinality marks.
 - Firma: `export function RelEdge({ id, markerStart, markerEnd, data }: EdgeProps & { data?: RelEdgeData })`
 
+### StackLinks
+- Ruta: src/components/tech-profile.tsx
+- Para qué: "In your stack": every line this tech draws (or would draw, before it is added) to what is already on the canvas, and anything it clashes with.
+- Firma: `export function StackLinks({ links, onCanvas }: { links: StackLink[]; onCanvas: boolean })`
+
 ### TechIcon
 - Ruta: src/components/nodes.tsx
-- Para qué: A technology's simpleicons.org logo in its own colour, or its initials when there is none.
+- Para qué: A technology's simpleicons.org logo in its own colour, or its initials when there is none. The logo is a mask painted with --ink, so a white or black brand mark stays visible on both themes.
 - Firma: `export function TechIcon({ tech, className }: { tech: Tech; className?: string })`
 
 ### TechNode
@@ -114,6 +124,11 @@ Antes de crear algo, busca aquí. Cada entrada apunta al código; nunca lo copia
 
 ## Utilidades
 
+### cn
+- Ruta: src/lib/utils.ts
+- Para qué: Class merging that knows the design scale. Out of the box the merger only knows Tailwind's own sizes, so it read `text-micro` as a colour and threw it away whenever a real colour such as `text-muted-foreground` came after it — which is how the search pills ended up at 13px.
+- Firma: `export const cn = createCn(`
+
 ### tint
 - Ruta: src/lib/utils.ts
 - Para qué: A technology's or group's own colour is catalog data, not a design token, so it reaches the markup as a CSS variable and the `.tint-*` classes (or `var(--tint)`) paint with it.
@@ -145,6 +160,11 @@ Antes de crear algo, busca aquí. Cada entrada apunta al código; nunca lo copia
 - Ruta: src/components/nodes.tsx
 - Para qué: Props a RelEdge wire receives: relationship, cardinality and its planned route.
 - Firma: `export interface RelEdgeData extends Record<string, unknown>`
+
+### StackLink
+- Ruta: src/components/tech-profile.tsx
+- Para qué: One relationship with the rest of the stack, already phrased from this tech's point of view.
+- Firma: `export interface StackLink`
 
 ### TechData
 - Ruta: src/components/nodes.tsx

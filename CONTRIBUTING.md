@@ -37,9 +37,23 @@ There are no environment variables and no services to run.
 
 Adding a whole box: add it to `groups.json` with its `sections`, create `<id>.json`, then add two lines to `src/catalog/index.ts`.
 
+## Adding or fixing a technology profile
+
+Profiles feed the drawer's licence, pricing and hosting badges and its pros and cons. They
+live in `src/catalog/profiles/<group>.json`, one file per box.
+
+1. Key the entry by the technology's `id`. Use only the values in the
+   [profile table of the README](README.md#technology-profiles).
+2. Give at least one pro and one con. Keep each to a short phrase a reader can scan.
+3. Base it on the vendor's current docs and pricing page, then set the file's `checked` date
+   to the day you looked (`YYYY-MM-DD`).
+4. A new box's file needs one more line in `src/catalog/index.ts`: import it and add it to `profileFiles`.
+5. Run `pnpm check`. It fails on an unknown id or value, an undated file, or a missing pro or con.
+
 ## Code changes
 
-- Keep the test next to the module it covers (`rules.test.ts`, `routing.test.ts`, `snap.test.ts`). Tests use `node --test` and `assert`, no framework.
+- Keep the test next to the module it covers (`rules.test.ts`, `routing.test.ts`, `snap.test.ts`, `search.test.ts`). Tests use `node --test` and `assert`, no framework.
+- Before writing a new component, hook or helper, look in `REGISTRY.md`. `CODEMAP.md` says where things live.
 - Keep the diff focused on one change. Discuss new dependencies in an issue first.
 
 ## Before opening a pull request
@@ -47,9 +61,12 @@ Adding a whole box: add it to `groups.json` with its `sections`, create `<id>.js
 Run what CI runs:
 
 ```bash
-pnpm check    # rule engine, catalog integrity, wire router, snapping
-pnpm lint     # Biome: lint + formatting check
-pnpm build    # type-check and production build
+pnpm check      # rule engine, catalog and profiles, wire router, snapping, search, contrast
+pnpm lint       # Biome: lint + formatting check
+pnpm typecheck  # tsc, strict
+pnpm knip       # unused files, exports and dependencies
+pnpm dup        # duplicated code
+pnpm build      # type-check and production build
 ```
 
 Then:
